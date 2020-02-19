@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "485028795835",
+    "firebase_url": "https://healthtagram.firebaseio.com",
+    "project_id": "healthtagram",
+    "storage_bucket": "healthtagram.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:485028795835:android:2817062c4a484689aea09e",
+        "android_client_info": {
+          "package_name": "com.example.healthtagram"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "485028795835-8l5f3u91cop59tuh62ik6433oef249bh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.healthtagram",
+            "certificate_hash": "9e175c5bce71b4b11b7761d31095b4a7567d67b2"
+          }
+        },
+        {
+          "client_id": "485028795835-283tvtdnevsp6arb5li3rub7g8auei7k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCF6vSryoBRqoeG9PE-ORW8kaNALF9D-j0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "485028795835-283tvtdnevsp6arb5li3rub7g8auei7k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

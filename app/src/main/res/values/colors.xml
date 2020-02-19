@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window">#00000000</color>
+    <color name="colorSnow">#F3FFFAFA</color>
+    <color name="lightGray">#C4FFFAFA</color>
+    <color name="white">#FFFFFF</color>
+    <color name="blue">#F32186F3</color>
+    <color name="blue_clicked">#429AF3</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#474747</color>
+    <color name="colorMain">#77000000</color>
+    <color name="black">#000000</color>
+    <color name="control_background">#cc4285f4</color>
+    <color name="basic">#FFD6D2D2</color>
+
+    <color name="colorDivision">#e0e0e0</color>
+    <color name="colorNavIcon">#1d1d1d</color>
+
+    <color name="colorGoogleSignIn">#d34836</color>
+    <color name="colorGoogleSignInPressed">#b02513</color>
+    <color name="colorEmailSignIn">#009688</color>
+    <color name="colorEmailSignInPressed">#004D40</color>
+</resources>

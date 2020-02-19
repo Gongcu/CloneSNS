@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:gravity="center_vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp">
+        <ImageView
+            android:id="@+id/detail_view_profile_image"
+            android:src="@drawable/profile"
+            android:layout_margin="7.5dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp" />
+        <TextView
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="userId"
+            android:id="@+id/detail_view_profile_name"/>
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+        <ImageView
+            android:id="@+id/post_setting_btn"
+            android:layout_gravity="right|center_vertical"
+            android:layout_marginRight="15dp"
+            android:layout_width="8dp"
+            android:layout_height="25dp"
+            android:src="@drawable/set_btn"/>
+    </LinearLayout>
+    <ImageView
+        android:id="@+id/detail_view_item_image"
+        android:scaleType="fitXY"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center_vertical">
+        <ImageView
+            android:id="@+id/detail_view_item_heart"
+            android:layout_marginLeft="7.5dp"
+            android:layout_width="27dp"
+            android:layout_height="27dp"
+            android:src="@drawable/heart_btn"/>
+        <ImageView
+            android:id="@+id/detail_view_item_comment"
+            android:layout_marginLeft="7.5dp"
+            android:layout_width="27dp"
+            android:layout_height="27dp"
+            android:src="@drawable/comment_btn"/>
+    </LinearLayout>
+    <TextView
+        android:id="@+id/detail_view_favorite_count"
+        android:text="like 0"
+        android:layout_marginLeft="7.5dp"
+        android:textColor="@color/black"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+    <TextView
+        android:id="@+id/detail_view_explain"
+        android:text="explain content"
+        android:layout_marginLeft="7.5dp"
+        android:textColor="@color/black"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
