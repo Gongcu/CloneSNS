@@ -1,10 +1,15 @@
 package com.example.healthtagram.activity;
 
+import androidx.annotation.AnyRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,13 +25,23 @@ import com.example.healthtagram.listener.EditProfileListener;
 import com.example.healthtagram.loading.BaseActivity;
 import com.example.healthtagram.loading.BaseApplication;
 import com.example.healthtagram.database.UserData;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 
 public class EditProfileActivity extends BaseActivity {
     private EditProfileListener editProfileListener;
@@ -37,16 +52,22 @@ public class EditProfileActivity extends BaseActivity {
     private static final int REQUEST_CROP = 22;
     private Uri selectedImageUri;
     private FirebaseFirestore db;
+    private FirebaseStorage storage;
     private FirebaseUser user;
+    private int state;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_profile);
         progressON();
+        storage = FirebaseStorage.getInstance();
         profilePicture = findViewById(R.id.profilePicture);
         nickName = findViewById(R.id.nicknameEditText);
         introduction = findViewById(R.id.introEditText);
+
+        Intent intent = getIntent();
+        state = intent.getExtras().getInt("state");
 
         init(); //기존 값을 플레이팅
         findViewById(R.id.close_btn).setOnClickListener(onClickListener);
@@ -63,8 +84,6 @@ public class EditProfileActivity extends BaseActivity {
                     break;
                 case R.id.confirm_btn:
                     edit_profile();
-                    ((MainActivity)MainActivity.context).callFragmentUdateMethod();
-                    finish();
                     //리스너 달아서 프래그먼트에 다시 로딩 시키기
                     break;
                 case R.id.profile_change_TextView:
@@ -80,10 +99,48 @@ public class EditProfileActivity extends BaseActivity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         // Access a Cloud Firestore instance from your Activity
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+        if(nickname==null || bio==null) {
+            Toast.makeText(this, "닉네임과 설명을 입력해주세요", Toast.LENGTH_LONG).show();
+            return;
+        }
         if(selectedImageUri==null)
-            userData = new UserData(nickname, "", bio);
-        else
+            userData = new UserData(nickname, getUriToDrawable(this, R.drawable.main_profile).toString(), bio);
+        else {
+            // Create a storage reference from our app
+            StorageReference storageRef = storage.getReference();
+            final StorageReference ImagesRef = storageRef.child("profiles/"+user.getUid()+".jpg");
+            profilePicture.setDrawingCacheEnabled(true);
+            profilePicture.buildDrawingCache();
+            Bitmap bitmap = ((BitmapDrawable) profilePicture.getDrawable()).getBitmap();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            byte[] data = baos.toByteArray();
+
+            UploadTask uploadTask = ImagesRef.putBytes(data);
+            Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                @Override
+                public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                    if (!task.isSuccessful()) {
+                        throw task.getException();
+                    }
+
+                    // Continue with the task to get the download URL
+                    return ImagesRef.getDownloadUrl();
+                }
+            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                @Override
+                public void onComplete(@NonNull Task<Uri> task) {
+                    if (task.isSuccessful()) {
+                        selectedImageUri = task.getResult();
+                    } else {
+                        // Handle failures
+                        // ...
+                    }
+                }
+            });
+
             userData = new UserData(nickname, selectedImageUri.toString(), bio);
+        }
         if(user!=null) {
             db.collection("users").document(user.getUid())
                     .set(userData)
@@ -91,6 +148,8 @@ public class EditProfileActivity extends BaseActivity {
                         @Override
                         public void onSuccess(Void aVoid) {
                             Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
+                            ((MainActivity)MainActivity.context).callFragmentUpdateMethod(state);
+                            finish();
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -152,8 +211,14 @@ public class EditProfileActivity extends BaseActivity {
         });
         //progressOFF();
     }
-    public void setEditProfileListener(EditProfileListener listener){
-        this.editProfileListener = listener;
+
+    public static final Uri getUriToDrawable(@NonNull Context context,
+                                             @AnyRes int drawableId) {
+        Uri imageUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE +
+                "://" + context.getResources().getResourcePackageName(drawableId)
+                + '/' + context.getResources().getResourceTypeName(drawableId)
+                + '/' + context.getResources().getResourceEntryName(drawableId) );
+        return imageUri;
     }
 }
 

@@ -11,6 +11,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -18,20 +19,31 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.healthtagram.R;
+import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.fragment.SearchFragment;
 import com.example.healthtagram.fragment.UploadFragment;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
 
 
 public class MainActivity extends AppCompatActivity {
     public static Context context;
     public static String TAG = "MAINACTIVITY";
     public static int UPLOAD = 100;
+    private FirebaseUser user;
+    private FirebaseFirestore db;
     private BottomNavigationView bottomNavigationView;
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private HomeFragment fragmentHome = new HomeFragment();
@@ -45,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
     public static final int PERMISSION_CODE = 1000;
+    public static final int FIRST_ACCCESS =10;
 
     /*
      * Hash Key: nhdcW85xtLEbd2HTEJW0p1Z9Z7I=
@@ -59,15 +72,24 @@ public class MainActivity extends AppCompatActivity {
         if (!hasPermissions(this, permissions)) {
             ActivityCompat.requestPermissions(this, permissions, PERMISSION_CODE);
         }
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser(); //현재 유저 가져오기
+        user = FirebaseAuth.getInstance().getCurrentUser(); //현재 유저 가져오기
+        db= FirebaseFirestore.getInstance();
         if (user == null) {
             startActivity(LoginActivity.class);
         } else {
-            String name = user.getDisplayName();
-            if (name.length() == 0) {
-                startActivity(EditProfileActivity.class);
-            }
+            DocumentReference docRef = db.collection("users").document(user.getUid());
+            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                @Override
+                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                    UserData userData = documentSnapshot.toObject(UserData.class);
+                    if(userData==null){
+                        Intent intent = new Intent(getApplicationContext(),EditProfileActivity.class);
+                        intent.putExtra("state",FIRST_ACCCESS);
+                        startActivity(intent);
+                    }
+                }
 
+            });
         }
 
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
@@ -101,6 +123,10 @@ public class MainActivity extends AppCompatActivity {
                     transaction.replace(R.id.frameLayout, fragmentHistory).commitAllowingStateLoss();
                     break;
                 case R.id.action_profile:
+                    Bundle bundle = new Bundle();
+                    String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    bundle.putString("destinationUid",uid);
+                    fragmentProfile.setArguments(bundle);
                     transaction.replace(R.id.frameLayout, fragmentProfile).commitAllowingStateLoss();
                     break;
             }
@@ -157,8 +183,10 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public void callFragmentUdateMethod() {
-        ProfileFragment fragment = (ProfileFragment) getSupportFragmentManager().findFragmentById(R.id.frameLayout);
-        fragment.updateProfile();
+    public void callFragmentUpdateMethod(int state) {
+        if(state!=FIRST_ACCCESS) {
+            ProfileFragment fragment = (ProfileFragment) getSupportFragmentManager().findFragmentById(R.id.frameLayout);
+            fragment.updateProfile(user.getUid());
+        }
     }
 }

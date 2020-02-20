@@ -7,6 +7,8 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,8 +21,11 @@ import com.example.healthtagram.R;
 import com.example.healthtagram.crop.CropImageActivity;
 import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.HomeFragment;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
@@ -30,7 +35,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -41,6 +48,7 @@ public class UploadActivity extends AppCompatActivity {
     private FirebaseUser user;
     private DatabaseReference mDatabase;// ...
     private FirebaseFirestore firestore;
+    private FirebaseStorage storage;
     private ImageView imageView;
     private Button photoBtn, confirmBtn, closeBtn;
     private TextInputEditText textInputEditText;
@@ -52,6 +60,7 @@ public class UploadActivity extends AppCompatActivity {
         user = FirebaseAuth.getInstance().getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
         firestore = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
 
         imageView = findViewById(R.id.imageView);
         photoBtn = findViewById(R.id.pickPhoto);
@@ -95,6 +104,37 @@ public class UploadActivity extends AppCompatActivity {
         Date date = new Date();
         String text = textInputEditText.getText().toString();
         String filename = ""+user.getUid()+sdf.format(date);
+
+        StorageReference storageRef = storage.getReference();
+        final StorageReference ImagesRef = storageRef.child("posts/"+filename+".jpg");
+        imageView.setDrawingCacheEnabled(true);
+        imageView.buildDrawingCache();
+        Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] data = baos.toByteArray();
+
+        UploadTask uploadTask = ImagesRef.putBytes(data);
+        Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                return ImagesRef.getDownloadUrl();
+            }
+        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+            @Override
+            public void onComplete(@NonNull Task<Uri> task) {
+                if (task.isSuccessful()) {
+                    selectedImageUri = task.getResult();
+                } else {
+                    // Handle failures
+                    // ...
+                }
+            }
+        });
+
         if (selectedImageUri != null && !text.equals("")){
             firestore.collection("posts").document(filename)
                     .set(new UserPost(selectedImageUri.toString(), text,System.currentTimeMillis(),user.getUid(),user.getEmail()))
@@ -112,33 +152,6 @@ public class UploadActivity extends AppCompatActivity {
                         }
                     });
         }
-    }
-
-    private void edit_profile() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        Date date = new Date();
-        String text = textInputEditText.getText().toString();
-        String filename = ""+user.getUid()+sdf.format(date);
-        if (selectedImageUri != null && !text.equals(""))
-            mDatabase.child("posts").child(filename).setValue(new UserPost(selectedImageUri.toString(), text,System.currentTimeMillis(),user.getUid(),user.getEmail()))
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            // Write was successful!
-                            Log.e("업로드","성공");
-                            finish();
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            // Write failed
-                            // ...
-                            Log.e("업로드","실패");
-                        }
-                    });
-        else
-            Toast.makeText(this, "사진을 업로드 하거나 내용을 입력하세요.", Toast.LENGTH_SHORT).show();
     }
 
     @Override

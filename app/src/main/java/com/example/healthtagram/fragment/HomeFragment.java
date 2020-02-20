@@ -14,28 +14,41 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.example.healthtagram.R;
+import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.Transaction;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class HomeFragment extends Fragment {
     public static final String TAG = "HOMEFRAGMENT";
     private FirebaseFirestore firebaseStore;
     private RecyclerView recyclerView;
+    private String uid;
+
     public HomeFragment() {
         // Required empty public constructor
     }
@@ -51,10 +64,11 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_post, container, false);
         // Inflate the layout for this fragment
+        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         firebaseStore = FirebaseFirestore.getInstance();
         recyclerView = view.findViewById(R.id.post_recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(new PostRecyclerViewAdapter());
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         return view;
     }
@@ -83,6 +97,8 @@ public class HomeFragment extends Fragment {
             });
         }
 
+
+
         @NonNull
         @Override
         public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -91,26 +107,102 @@ public class HomeFragment extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull final ItemViewHolder holder, final int position) {
             //이미지 로딩 라이브러리 glide
+            final int p = position;
             Glide.with(holder.itemView.getContext()).load(Uri.parse(postList.get(position).getPhoto())).into(holder.postImageView);
-
-            holder.nameTextView.setText(postList.get(position).getUserId());
+            firebaseStore.collection("users").document(postList.get(position).getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                @Override
+                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                    UserData userData = documentSnapshot.toObject(UserData.class);
+                    if(userData.getProfile()!=null)
+                        Glide.with(holder.itemView.getContext()).load(Uri.parse(userData.getProfile())).into(holder.profileImageView);
+                    if(userData.getUserName()!=null)
+                        holder.nameTextView.setText(userData.getUserName());
+                }
+            });
             holder.explainTextView.setText(postList.get(position).getText());
-            holder.favoriteCountTextView.setText("Likes "+postList.get(position).getFavoriteCount());
+            holder.favoriteCountTextView.setText("Likes " + postList.get(position).getFavoriteCount());
+            holder.favoriteImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.e(TAG, "click event");
+                    favoriteEvent(p);
+                }
+            });
+            if (postList.get(position).getFavorites().containsKey(uid)) {
+                //when btn is clicked
+                holder.favoriteImageView.setImageResource(R.drawable.heart_btn_clicked);
+            } else {
+                holder.favoriteImageView.setImageResource(R.drawable.heart_btn);
+            }
+            holder.profileImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ProfileFragment fragment = new ProfileFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putString("destinationUid",postList.get(position).getUid());
+                    bundle.putString("userId",postList.get(position).getUserId());
+                    fragment.setArguments(bundle);
+                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout,fragment).commit();
+                }
+            });
+            holder.postSettingBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //게시물 숨기기 혹은 해당 유저 팔로우 취소
+                }
+            });
         }
+
 
         @Override
         public int getItemCount() {
             return postList.size();
         }
+
+        private void favoriteEvent(final int position) {
+            final DocumentReference docRef = firebaseStore.collection("posts").document(uidList.get(position));
+            firebaseStore.runTransaction(new Transaction.Function<Void>() {
+                @Override
+                public Void apply(Transaction transaction) throws FirebaseFirestoreException {
+                    String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    UserPost userPost = transaction.get(docRef).toObject(UserPost.class);
+                    if (userPost.getFavorites().containsKey(uid)) {
+                        //when btn is clicked
+                        userPost.setFavoriteCount(userPost.getFavoriteCount() - 1);
+                        userPost.getFavorites().remove(uid);
+                    } else {
+                        //when btn isn't clicked
+                        userPost.setFavoriteCount(userPost.getFavoriteCount() + 1);
+                        userPost.getFavorites().put(uid, true);
+                    }
+                    transaction.set(docRef, userPost);
+                    return null;
+                }
+            }).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    Log.d(TAG, "Transaction success!");
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.w(TAG, "Transaction failure.", e);
+                }
+            });
+
+        }
     }
-    public class ItemViewHolder extends RecyclerView.ViewHolder{
+
+    public class ItemViewHolder extends RecyclerView.ViewHolder {
         private ImageView profileImageView;
         private ImageView postImageView;
         private TextView nameTextView;
         private TextView favoriteCountTextView;
         private TextView explainTextView;
+        private ImageView favoriteImageView;
+        private ImageView postSettingBtn;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
@@ -119,6 +211,8 @@ public class HomeFragment extends Fragment {
             nameTextView = itemView.findViewById(R.id.detail_view_profile_name);
             favoriteCountTextView = itemView.findViewById(R.id.detail_view_favorite_count);
             explainTextView = itemView.findViewById(R.id.detail_view_explain);
+            favoriteImageView = itemView.findViewById(R.id.detail_view_item_favorite);
+            postSettingBtn = itemView.findViewById(R.id.post_setting_btn);
         }
 
     }
