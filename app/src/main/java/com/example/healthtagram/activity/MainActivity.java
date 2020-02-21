@@ -4,10 +4,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -36,6 +38,8 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
+
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -188,5 +192,25 @@ public class MainActivity extends AppCompatActivity {
             ProfileFragment fragment = (ProfileFragment) getSupportFragmentManager().findFragmentById(R.id.frameLayout);
             fragment.updateProfile(user.getUid());
         }
+    }
+    public void changeBottomNavigationItem(int position){
+        bottomNavigationView.getMenu().getItem(position).setChecked(true); //클릭 표시
+    }
+
+    @Override
+    public void onBackPressed() {
+        BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottomNavigationView);
+        int seletedItemId = bottomNavigationView.getSelectedItemId();
+        if (R.id.action_home != seletedItemId) {
+            setHomeItem(MainActivity.this); //home이 아닐 경우 home으로 이동
+        } else {
+            super.onBackPressed();//home일 경우 일반 종료
+        }
+    }
+
+    public static void setHomeItem(Activity activity) {
+        BottomNavigationView bottomNavigationView = (BottomNavigationView)
+                activity.findViewById(R.id.bottomNavigationView);
+        bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 }

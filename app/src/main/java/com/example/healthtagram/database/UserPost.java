@@ -12,51 +12,6 @@ public class UserPost {
     private int favoriteCount;  //좋아요 수
     private Map<String, Boolean> favorites; //좋아요 중복 방지
 
-    class Comment{ //댓글 관리 클래스
-        private String uid;
-        private String userId;
-        private String comment;
-        private String date;
-
-        public Comment(String uid, String userId, String comment, String date) {
-            this.uid = uid;
-            this.userId = userId;
-            this.comment = comment;
-            this.date = date;
-        }
-
-        public String getUid() {
-            return uid;
-        }
-
-        public void setUid(String uid) {
-            this.uid = uid;
-        }
-
-        public String getUserId() {
-            return userId;
-        }
-
-        public void setUserId(String userId) {
-            this.userId = userId;
-        }
-
-        public String getComment() {
-            return comment;
-        }
-
-        public void setComment(String comment) {
-            this.comment = comment;
-        }
-
-        public String getDate() {
-            return date;
-        }
-
-        public void setDate(String date) {
-            this.date = date;
-        }
-    }
 
     public UserPost(){}
 

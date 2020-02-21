@@ -74,12 +74,13 @@
             <View
                 android:layout_gravity="bottom"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/colorMain"></View>
+                android:layout_height="0.5dp"
+                android:background="@color/lightGray"></View>
         </FrameLayout>
 
 
         <com.google.android.material.textfield.TextInputLayout
+            android:layout_marginLeft="7.5dp"
             android:layout_marginTop="10dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -89,6 +90,7 @@
                 android:id="@+id/textInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="@null"
                 android:hint="내용을 입력하세요" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>

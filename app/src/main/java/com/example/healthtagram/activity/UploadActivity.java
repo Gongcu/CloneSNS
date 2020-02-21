@@ -100,11 +100,9 @@ public class UploadActivity extends AppCompatActivity {
     }
 
     private void uploadPost(){
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        Date date = new Date();
-        String text = textInputEditText.getText().toString();
-        String filename = ""+user.getUid()+sdf.format(date);
-
+        final String text = textInputEditText.getText().toString();
+        final Long time = System.currentTimeMillis();
+        final String filename = ""+user.getUid()+"_"+time;
         StorageReference storageRef = storage.getReference();
         final StorageReference ImagesRef = storageRef.child("posts/"+filename+".jpg");
         imageView.setDrawingCacheEnabled(true);
@@ -128,6 +126,24 @@ public class UploadActivity extends AppCompatActivity {
             public void onComplete(@NonNull Task<Uri> task) {
                 if (task.isSuccessful()) {
                     selectedImageUri = task.getResult();
+                    Log.e("iamgeUri",selectedImageUri.toString());
+                    if (selectedImageUri != null && !text.equals("")){
+                        firestore.collection("posts").document(filename)
+                                .set(new UserPost(selectedImageUri.toString(), text,time,user.getUid(),user.getEmail()))
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Toast.makeText(UploadActivity.this, "업로드 성공", Toast.LENGTH_SHORT).show();
+                                        Log.e("업로드","성공");
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.e("업로드","실패");
+                                    }
+                                });
+                    }
                 } else {
                     // Handle failures
                     // ...
@@ -135,23 +151,6 @@ public class UploadActivity extends AppCompatActivity {
             }
         });
 
-        if (selectedImageUri != null && !text.equals("")){
-            firestore.collection("posts").document(filename)
-                    .set(new UserPost(selectedImageUri.toString(), text,System.currentTimeMillis(),user.getUid(),user.getEmail()))
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Toast.makeText(UploadActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
-                            Log.e("업로드","성공");
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.e("업로드","실패");
-                        }
-                    });
-        }
     }
 
     @Override

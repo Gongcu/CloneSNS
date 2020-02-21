@@ -1,6 +1,7 @@
 package com.example.healthtagram.fragment;
 
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -21,12 +22,17 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.example.healthtagram.R;
+import com.example.healthtagram.activity.CommentActivity;
+import com.example.healthtagram.activity.MainActivity;
+import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
+import com.example.healthtagram.loading.BaseFragment;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -43,12 +49,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HomeFragment extends Fragment {
+public class HomeFragment extends BaseFragment {
     public static final String TAG = "HOMEFRAGMENT";
     private FirebaseFirestore firebaseStore;
     private RecyclerView recyclerView;
     private String uid;
-
+    private String userName;
+    private String userProfile;
+    private String userExplain;
     public HomeFragment() {
         // Required empty public constructor
     }
@@ -64,12 +72,12 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_post, container, false);
         // Inflate the layout for this fragment
+        progressON();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         firebaseStore = FirebaseFirestore.getInstance();
         recyclerView = view.findViewById(R.id.post_recyclerView);
         recyclerView.setAdapter(new PostRecyclerViewAdapter());
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-
         return view;
     }
 
@@ -115,13 +123,18 @@ public class HomeFragment extends Fragment {
                 @Override
                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                     UserData userData = documentSnapshot.toObject(UserData.class);
-                    if(userData.getProfile()!=null)
+                    if(userData.getProfile()!=null) {
                         Glide.with(holder.itemView.getContext()).load(Uri.parse(userData.getProfile())).into(holder.profileImageView);
-                    if(userData.getUserName()!=null)
+                        userProfile=userData.getProfile();
+                    }
+                    if(userData.getUserName()!=null) {
                         holder.nameTextView.setText(userData.getUserName());
+                        userName=userData.getUserName();
+                    }
                 }
             });
-            holder.explainTextView.setText(postList.get(position).getText());
+            userExplain = postList.get(position).getText();
+            holder.explainTextView.setText(userExplain);
             holder.favoriteCountTextView.setText("Likes " + postList.get(position).getFavoriteCount());
             holder.favoriteImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -145,6 +158,7 @@ public class HomeFragment extends Fragment {
                     bundle.putString("userId",postList.get(position).getUserId());
                     fragment.setArguments(bundle);
                     getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout,fragment).commit();
+                    ((MainActivity)MainActivity.context).changeBottomNavigationItem(4);
                 }
             });
             holder.postSettingBtn.setOnClickListener(new View.OnClickListener() {
@@ -153,6 +167,32 @@ public class HomeFragment extends Fragment {
                     //게시물 숨기기 혹은 해당 유저 팔로우 취소
                 }
             });
+            holder.commentBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getActivity(), CommentActivity.class);
+                    intent.putExtra("filename",postList.get(position).getUid()+"_"+postList.get(position).getTimestamp());
+                    intent.putExtra("name",userName);
+                    intent.putExtra("explain",userExplain);
+                    intent.putExtra("profile",userProfile);
+                    intent.putExtra("destinationUid",postList.get(position).getUid());
+                    startActivity(intent);
+                }
+            });
+            holder.explainTextView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getActivity(), CommentActivity.class);
+                    intent.putExtra("filename",postList.get(position).getUid()+"_"+postList.get(position).getTimestamp());
+                    intent.putExtra("name",userName);
+                    intent.putExtra("explain",userExplain);
+                    intent.putExtra("profile",userProfile);
+                    intent.putExtra("destinationUid",postList.get(position).getUid());
+                    startActivity(intent);
+                }
+            });
+            if(position+1==postList.size())
+                progressOFF();
         }
 
 
@@ -176,6 +216,7 @@ public class HomeFragment extends Fragment {
                         //when btn isn't clicked
                         userPost.setFavoriteCount(userPost.getFavoriteCount() + 1);
                         userPost.getFavorites().put(uid, true);
+                        favoriteAlarm(postList.get(position).getUid());
                     }
                     transaction.set(docRef, userPost);
                     return null;
@@ -193,6 +234,12 @@ public class HomeFragment extends Fragment {
             });
 
         }
+        private void favoriteAlarm(String destinationUid){
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),destinationUid,0,"",System.currentTimeMillis());
+            FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
+        }
+
     }
 
     public class ItemViewHolder extends RecyclerView.ViewHolder {
@@ -203,6 +250,7 @@ public class HomeFragment extends Fragment {
         private TextView explainTextView;
         private ImageView favoriteImageView;
         private ImageView postSettingBtn;
+        private ImageView commentBtn;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
@@ -213,6 +261,7 @@ public class HomeFragment extends Fragment {
             explainTextView = itemView.findViewById(R.id.detail_view_explain);
             favoriteImageView = itemView.findViewById(R.id.detail_view_item_favorite);
             postSettingBtn = itemView.findViewById(R.id.post_setting_btn);
+            commentBtn = itemView.findViewById(R.id.detail_view_item_comment);
         }
 
     }

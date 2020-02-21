@@ -1,39 +1,30 @@
 package com.example.healthtagram.fragment;
 
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.LinearLayoutCompat;
-import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
+import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_grid;
 import com.example.healthtagram.R;
 import com.example.healthtagram.activity.EditProfileActivity;
 import com.example.healthtagram.activity.SignupActivity;
-import com.example.healthtagram.database.UserPost;
-import com.example.healthtagram.listener.EditProfileListener;
-import com.example.healthtagram.loading.BaseApplication;
+import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
+import com.example.healthtagram.listener.OnBackPressedListener;
 import com.example.healthtagram.loading.BaseFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -41,22 +32,15 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Transaction;
-import com.google.firebase.firestore.auth.User;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 
-import static com.facebook.share.internal.DeviceShareDialogFragment.TAG;
-
 
 public class ProfileFragment extends BaseFragment {
+
     private TextView nickname, bio;
     private TextView postNumber,followerNumber,followingNumber;
     private ImageView profilePicture;
@@ -110,7 +94,7 @@ public class ProfileFragment extends BaseFragment {
             updateProfile(user.getUid());
             button.setOnClickListener(onClickListener);
             editProfileBtn.setOnClickListener(onClickListener);
-            accountRecyclerView.setAdapter(new AccountRecyclerViewAdapter(user.getUid()));
+            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(user.getUid(),postNumber,getActivity()));
         }else{
             //others profile
             updateProfile(uid);
@@ -129,7 +113,7 @@ public class ProfileFragment extends BaseFragment {
             });
             button.setOnClickListener(onFollowClickListener);
             editProfileBtn.setVisibility(View.GONE);
-            accountRecyclerView.setAdapter(new AccountRecyclerViewAdapter(uid));
+            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(uid,postNumber,getActivity()));
         }
         accountRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
         //progressOFF();
@@ -189,60 +173,6 @@ public class ProfileFragment extends BaseFragment {
         });
     }
 
-    public class AccountRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
-        private ArrayList<UserPost> postList = new ArrayList<>();
-
-        AccountRecyclerViewAdapter(String uid){
-            firebaseStore.collection("posts").whereEqualTo("uid",uid).addSnapshotListener(new EventListener<QuerySnapshot>() {
-                @Override
-                public void onEvent(@Nullable QuerySnapshot value,
-                                    @Nullable FirebaseFirestoreException e) {
-                    if (e != null) {
-                        return;
-                    }
-                    for (QueryDocumentSnapshot doc : value) {
-                        UserPost item = doc.toObject(UserPost.class);
-                        postList.add(item);
-                    }
-                    postNumber.setText((postList.size())+"");
-                    //LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.FILL_PARENT);
-                    //lp.gravity = Gravity.CENTER;
-                    //tv.setLayoutParams(lp);
-                    notifyDataSetChanged();
-                }
-            });
-        }
-
-        @NonNull
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            int width = getResources().getDisplayMetrics().widthPixels/3;
-            ImageView imageView = new ImageView(parent.getContext());
-            imageView.setLayoutParams(new LinearLayoutCompat.LayoutParams(width,width));
-            return new CustomViewHolder(imageView);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-            ImageView imageView = ((CustomViewHolder)holder).imageView;
-            Glide.with(holder.itemView.getContext()).load(postList.get(position).getPhoto()).apply(RequestOptions.centerCropTransform()).into(imageView);
-        }
-
-        @Override
-        public int getItemCount() {
-            return postList.size();
-        }
-
-
-        class CustomViewHolder extends RecyclerView.ViewHolder {
-            private ImageView imageView;
-            public CustomViewHolder(@NonNull ImageView imageView) {
-                super(imageView);
-                this.imageView = (ImageView) imageView;
-            }
-        }
-    }
-
     private void followEvent(final String uid) { //destinationUid를 넘겨받음
         final DocumentReference myRef = firebaseStore.collection("users").document(user.getUid()); //본인 uid
         final DocumentReference destinationRef = firebaseStore.collection("users").document(uid); //본인 uid
@@ -264,6 +194,7 @@ public class ProfileFragment extends BaseFragment {
                     userData.getFollow().put(uid, true);
                     otherUserData.setFollower_count(otherUserData.getFollower_count()+1);
                     followerNumber.setText((Integer.parseInt(followerNumber.getText().toString())+1)+"");
+                    followAlarm(uid);
                     button.setText("팔로우 취소");
                 }
                 transaction.set(myRef, userData);
@@ -284,4 +215,9 @@ public class ProfileFragment extends BaseFragment {
 
     }
 
+    private void followAlarm(String destinationUid){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),destinationUid,2,"",System.currentTimeMillis());
+        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
+    }
 }

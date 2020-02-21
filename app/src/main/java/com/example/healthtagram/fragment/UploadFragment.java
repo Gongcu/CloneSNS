@@ -35,7 +35,7 @@ import java.util.Date;
 
 import static android.app.Activity.RESULT_OK;
 
-public class UploadFragment extends Fragment {
+public class UploadFragment extends Fragment  {
     private static final int FROM_ALBUM = 100;
     private FragmentTransaction transaction;
     private FragmentManager fragmentManager;

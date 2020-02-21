@@ -44,7 +44,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public class EditProfileActivity extends BaseActivity {
-    private EditProfileListener editProfileListener;
     private EditText nickName, introduction;
     private ImageView profilePicture;
     private static final int OVAL = 0;
@@ -94,12 +93,12 @@ public class EditProfileActivity extends BaseActivity {
 
     private void edit_profile() {
         UserData userData;
-        String nickname = ((EditText) findViewById(R.id.nicknameEditText)).getText().toString();
-        String bio = ((EditText) findViewById(R.id.introEditText)).getText().toString();
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        final String nickname = ((EditText) findViewById(R.id.nicknameEditText)).getText().toString();
+        final String bio = ((EditText) findViewById(R.id.introEditText)).getText().toString();
+        final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         // Access a Cloud Firestore instance from your Activity
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        if(nickname==null || bio==null) {
+        final FirebaseFirestore db = FirebaseFirestore.getInstance();
+        if(nickname.equals("") || bio.equals("")) {
             Toast.makeText(this, "닉네임과 설명을 입력해주세요", Toast.LENGTH_LONG).show();
             return;
         }
@@ -132,6 +131,25 @@ public class EditProfileActivity extends BaseActivity {
                 public void onComplete(@NonNull Task<Uri> task) {
                     if (task.isSuccessful()) {
                         selectedImageUri = task.getResult();
+                        UserData userData = new UserData(nickname, selectedImageUri.toString(), bio);
+                        if(user!=null) {
+                            db.collection("users").document(user.getUid())
+                                    .set(userData)
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
+                                            ((MainActivity)MainActivity.context).callFragmentUpdateMethod(state);
+                                            finish();
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+
+                                        }
+                                    });
+                        }
                     } else {
                         // Handle failures
                         // ...
@@ -139,26 +157,8 @@ public class EditProfileActivity extends BaseActivity {
                 }
             });
 
-            userData = new UserData(nickname, selectedImageUri.toString(), bio);
         }
-        if(user!=null) {
-            db.collection("users").document(user.getUid())
-                    .set(userData)
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
-                            ((MainActivity)MainActivity.context).callFragmentUpdateMethod(state);
-                            finish();
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
 
-                        }
-                    });
-        }
     }
 
     @Override

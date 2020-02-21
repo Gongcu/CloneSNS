@@ -19,7 +19,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activity.UploadActivity"></activity>
+        <activity android:name=".activity.CommentActivity"></activity>
+        <activity android:name=".activity.UploadActivity" />
         <activity android:name=".activity.PasswordResetActivity" />
         <activity android:name=".activity.EditProfileActivity" />
         <activity android:name=".activity.SplashActivity">
