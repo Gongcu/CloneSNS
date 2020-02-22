@@ -8,6 +8,7 @@ public class AlarmData {
     private String message;
     private Long timestamp;
 
+    //like:0   comment:1    follow:2
     public AlarmData() {
     }
 

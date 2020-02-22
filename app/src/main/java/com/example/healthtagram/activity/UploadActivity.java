@@ -21,6 +21,7 @@ import com.example.healthtagram.R;
 import com.example.healthtagram.crop.CropImageActivity;
 import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.HomeFragment;
+import com.example.healthtagram.loading.BaseActivity;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -41,7 +42,7 @@ import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class UploadActivity extends AppCompatActivity {
+public class UploadActivity extends BaseActivity {
     private static final int FROM_ALBUM = 100;
     private static final int REQUEST_CROP = 22;
     private Uri selectedImageUri;
@@ -50,7 +51,8 @@ public class UploadActivity extends AppCompatActivity {
     private FirebaseFirestore firestore;
     private FirebaseStorage storage;
     private ImageView imageView;
-    private Button photoBtn, confirmBtn, closeBtn;
+    private ImageView getPhotoBtn;
+    private Button  confirmBtn, closeBtn;
     private TextInputEditText textInputEditText;
 
     @Override
@@ -63,14 +65,14 @@ public class UploadActivity extends AppCompatActivity {
         storage = FirebaseStorage.getInstance();
 
         imageView = findViewById(R.id.imageView);
-        photoBtn = findViewById(R.id.pickPhoto);
+        getPhotoBtn = findViewById(R.id.pickPhoto);
         confirmBtn = findViewById(R.id.confirm_btn);
         closeBtn = findViewById(R.id.close_btn);
         textInputEditText = findViewById(R.id.textInput);
 
         closeBtn.setOnClickListener(onClickListener);
         confirmBtn.setOnClickListener(onClickListener);
-        photoBtn.setOnClickListener(onClickListener);
+        getPhotoBtn.setOnClickListener(onClickListener);
     }
     View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
@@ -85,8 +87,6 @@ public class UploadActivity extends AppCompatActivity {
                     break;
                 case R.id.confirm_btn:
                     uploadPost();
-                    setResult(RESULT_OK);
-                    finish();
                     break;
             }
         }
@@ -100,6 +100,7 @@ public class UploadActivity extends AppCompatActivity {
     }
 
     private void uploadPost(){
+        progressON();
         final String text = textInputEditText.getText().toString();
         final Long time = System.currentTimeMillis();
         final String filename = ""+user.getUid()+"_"+time;
@@ -133,13 +134,17 @@ public class UploadActivity extends AppCompatActivity {
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
+                                        progressOFF();
                                         Toast.makeText(UploadActivity.this, "업로드 성공", Toast.LENGTH_SHORT).show();
                                         Log.e("업로드","성공");
+                                        setResult(RESULT_OK);
+                                        finish();
                                     }
                                 })
                                 .addOnFailureListener(new OnFailureListener() {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
+                                        progressOFF();
                                         Log.e("업로드","실패");
                                     }
                                 });

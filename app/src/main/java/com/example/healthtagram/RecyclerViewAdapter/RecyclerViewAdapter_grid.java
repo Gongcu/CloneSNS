@@ -1,6 +1,7 @@
 package com.example.healthtagram.RecyclerViewAdapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -27,6 +28,11 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
     private Context context;
     private TextView postNumber;
 
+
+    /**
+     *
+        THIS ADAPTER IS FOR PROFILE FRAGMENT
+     */
     public RecyclerViewAdapter_grid(String uid, final TextView postNumber, Context context){
         this.context=context;
         FirebaseFirestore firestore=FirebaseFirestore.getInstance();
@@ -47,6 +53,10 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
         });
     }
 
+    /**
+     *
+     THIS ADAPTER IS FOR SEARCH FRAGMENT
+     */
     public RecyclerViewAdapter_grid(Context context){
         this.context=context;
         FirebaseFirestore firestore=FirebaseFirestore.getInstance();
@@ -79,6 +89,7 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         ImageView imageView = ((RecyclerViewAdapter_grid.CustomViewHolder)holder).imageView;
         Glide.with(holder.itemView.getContext()).load(postList.get(position).getPhoto()).apply(RequestOptions.centerCropTransform()).into(imageView);
+        Log.e("photo",postList.get(position).getPhoto());
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

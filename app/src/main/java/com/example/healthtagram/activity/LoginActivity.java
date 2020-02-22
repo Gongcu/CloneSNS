@@ -116,13 +116,10 @@ public class LoginActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if (task.isSuccessful()) {
-                                Snackbar.make(findViewById(R.id.main_layout), "로그인에 성공했습니다.",
-                                        Snackbar.LENGTH_SHORT).show();
-                                FirebaseUser user = mAuth.getCurrentUser();
                                 startActivity(MainActivity.class);
                             } else {
-                                Snackbar.make(findViewById(R.id.main_layout), "로그인에 실패했습니다.",
-                                        Snackbar.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "이메일 혹은 비밀번호를 확인하세요.",
+                                        Toast.LENGTH_SHORT).show();
                             }
 
                             // ...

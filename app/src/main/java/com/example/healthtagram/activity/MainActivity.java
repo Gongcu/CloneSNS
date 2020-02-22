@@ -143,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == UPLOAD && resultCode == RESULT_OK) {
             Log.e("성공", requestCode + "  " + resultCode);
+            fragmentHome=new HomeFragment();
             FragmentTransaction transaction = fragmentManager.beginTransaction();
             transaction.replace(R.id.frameLayout, fragmentHome).commitAllowingStateLoss();
             bottomNavigationView.getMenu().getItem(0).setChecked(true); //클릭 표시

@@ -92,73 +92,88 @@ public class EditProfileActivity extends BaseActivity {
     };
 
     private void edit_profile() {
-        UserData userData;
+        progressON();
         final String nickname = ((EditText) findViewById(R.id.nicknameEditText)).getText().toString();
         final String bio = ((EditText) findViewById(R.id.introEditText)).getText().toString();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         // Access a Cloud Firestore instance from your Activity
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
-        if(nickname.equals("") || bio.equals("")) {
+        if (nickname.equals("") || bio.equals("")) {
             Toast.makeText(this, "닉네임과 설명을 입력해주세요", Toast.LENGTH_LONG).show();
+            progressOFF();
             return;
         }
-        if(selectedImageUri==null)
-            userData = new UserData(nickname, getUriToDrawable(this, R.drawable.main_profile).toString(), bio);
-        else {
-            // Create a storage reference from our app
-            StorageReference storageRef = storage.getReference();
-            final StorageReference ImagesRef = storageRef.child("profiles/"+user.getUid()+".jpg");
-            profilePicture.setDrawingCacheEnabled(true);
-            profilePicture.buildDrawingCache();
-            Bitmap bitmap = ((BitmapDrawable) profilePicture.getDrawable()).getBitmap();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            byte[] data = baos.toByteArray();
-
-            UploadTask uploadTask = ImagesRef.putBytes(data);
-            Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                @Override
-                public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                    if (!task.isSuccessful()) {
-                        throw task.getException();
-                    }
-
-                    // Continue with the task to get the download URL
-                    return ImagesRef.getDownloadUrl();
-                }
-            }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                @Override
-                public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()) {
-                        selectedImageUri = task.getResult();
-                        UserData userData = new UserData(nickname, selectedImageUri.toString(), bio);
-                        if(user!=null) {
-                            db.collection("users").document(user.getUid())
-                                    .set(userData)
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-                                            Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
-                                            ((MainActivity)MainActivity.context).callFragmentUpdateMethod(state);
-                                            finish();
-                                        }
-                                    })
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-
-                                        }
-                                    });
+        if (selectedImageUri == null) {
+            UserData userData = new UserData(nickname, "", bio);
+            db.collection("users").document(user.getUid())
+                    .set(userData)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            progressOFF();
+                            Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
+                            ((MainActivity) MainActivity.context).callFragmentUpdateMethod(state);
+                            finish();
                         }
-                    } else {
-                        // Handle failures
-                        // ...
-                    }
-                }
-            });
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
 
+                        }
+                    });
         }
+        // Create a storage reference from our app
+        StorageReference storageRef = storage.getReference();
+        final StorageReference ImagesRef = storageRef.child("profiles/" + user.getUid() + ".jpg");
+        profilePicture.setDrawingCacheEnabled(true);
+        profilePicture.buildDrawingCache();
+        Bitmap bitmap = ((BitmapDrawable) profilePicture.getDrawable()).getBitmap();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] data = baos.toByteArray();
 
+        UploadTask uploadTask = ImagesRef.putBytes(data);
+        Task<Uri> urlTask = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                // Continue with the task to get the download URL
+                return ImagesRef.getDownloadUrl();
+            }
+        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+            @Override
+            public void onComplete(@NonNull Task<Uri> task) {
+                if (task.isSuccessful()) {
+                    selectedImageUri = task.getResult();
+                    UserData userData = new UserData(nickname, selectedImageUri.toString(), bio);
+                    if (user != null) {
+                        db.collection("users").document(user.getUid())
+                                .set(userData)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        progressOFF();
+                                        Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
+                                        ((MainActivity) MainActivity.context).callFragmentUpdateMethod(state);
+                                        finish();
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+
+                                    }
+                                });
+                    }
+                } else {
+                    // Handle failures
+                    // ...
+                }
+            }
+        });
     }
 
     @Override
@@ -166,21 +181,19 @@ public class EditProfileActivity extends BaseActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FROM_ALBUM && resultCode == RESULT_OK && data != null && data.getData() != null) {
             selectedImageUri = data.getData();
-            if(selectedImageUri!=null)
+            if (selectedImageUri != null)
                 goCrop(selectedImageUri);
 
-        }
-        else if(requestCode == REQUEST_CROP && resultCode == RESULT_OK){
+        } else if (requestCode == REQUEST_CROP && resultCode == RESULT_OK) {
             profilePicture.setImageURI(data.getData());
-        }
-        else{
-            Log.e("request, result",requestCode+"  "+resultCode);
+        } else {
+            Log.e("request, result", requestCode + "  " + resultCode);
         }
     }
 
-    private void getPicture(){
+    private void getPicture() {
         Intent intent = new Intent(Intent.ACTION_PICK);
-        intent. setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+        intent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
         startActivityForResult(intent, FROM_ALBUM);
     }
 
@@ -188,11 +201,11 @@ public class EditProfileActivity extends BaseActivity {
     private void goCrop(Uri sourUri) {
         Intent intent = new Intent(EditProfileActivity.this, CropImageActivity.class);
         intent.setData(sourUri);
-        intent.putExtra("style",OVAL);
+        intent.putExtra("style", OVAL);
         startActivityForResult(intent, REQUEST_CROP);
     }
 
-    private void init(){
+    private void init() {
         user = FirebaseAuth.getInstance().getCurrentUser();
         db = FirebaseFirestore.getInstance();
         DocumentReference docRef = db.collection("users").document(user.getUid());
@@ -200,7 +213,7 @@ public class EditProfileActivity extends BaseActivity {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 UserData userData = documentSnapshot.toObject(UserData.class);
-                if(userData!=null) {
+                if (userData != null) {
                     nickName.setText(userData.getUserName());
                     introduction.setText(userData.getBio());
                     if (!userData.getProfile().equals(""))
@@ -209,7 +222,6 @@ public class EditProfileActivity extends BaseActivity {
                 progressOFF();
             }
         });
-        //progressOFF();
     }
 
     public static final Uri getUriToDrawable(@NonNull Context context,
@@ -217,7 +229,7 @@ public class EditProfileActivity extends BaseActivity {
         Uri imageUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE +
                 "://" + context.getResources().getResourcePackageName(drawableId)
                 + '/' + context.getResources().getResourceTypeName(drawableId)
-                + '/' + context.getResources().getResourceEntryName(drawableId) );
+                + '/' + context.getResources().getResourceEntryName(drawableId));
         return imageUri;
     }
 }

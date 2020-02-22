@@ -2,6 +2,10 @@ package com.example.healthtagram.fragment;
 
 
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -19,8 +23,13 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.example.healthtagram.R;
 import com.example.healthtagram.activity.CommentActivity;
 import com.example.healthtagram.activity.MainActivity;
@@ -29,8 +38,11 @@ import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.loading.BaseFragment;
 import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -38,9 +50,11 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Transaction;
+import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.storage.FirebaseStorage;
 
@@ -51,12 +65,24 @@ import java.util.Map;
 
 public class HomeFragment extends BaseFragment {
     public static final String TAG = "HOMEFRAGMENT";
+    public static final int NOT_CHANGED = 1000000;
     private FirebaseFirestore firebaseStore;
     private RecyclerView recyclerView;
+    private PostRecyclerViewAdapter adapter;
     private String uid;
     private String userName;
     private String userProfile;
     private String userExplain;
+
+    private Long oldestTimeStamp;
+    private int postCounter = 0;
+    private int counter = 1;
+    private int log = 0;
+    private int changedItemPosition=1000000;
+
+    private ArrayList<UserPost> postList = new ArrayList<>();
+    private ArrayList<String> uidList = new ArrayList<>();
+
     public HomeFragment() {
         // Required empty public constructor
     }
@@ -72,22 +98,76 @@ public class HomeFragment extends BaseFragment {
                              Bundle savedInstanceState) {
         View view = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_post, container, false);
         // Inflate the layout for this fragment
-        progressON();
+        postList.clear();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         firebaseStore = FirebaseFirestore.getInstance();
         recyclerView = view.findViewById(R.id.post_recyclerView);
-        recyclerView.setAdapter(new PostRecyclerViewAdapter());
+        adapter = new PostRecyclerViewAdapter();
+        recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        recyclerView.addOnScrollListener(onScrollListener);
         return view;
     }
 
 
-    public class PostRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder> {
-        private ArrayList<UserPost> postList = new ArrayList<>();
-        private ArrayList<String> uidList = new ArrayList<>();
+    RecyclerView.OnScrollListener onScrollListener = new RecyclerView.OnScrollListener() {
+        @Override
+        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+        }
 
+        @Override
+        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            //마지막 게시글인지 체크
+            if (!recyclerView.canScrollVertically(1)) {
+                progressON();
+                if (postCounter == counter) {
+                    Toast.makeText(getActivity(), "게시물 로딩 중...", Toast.LENGTH_SHORT).show();
+                }
+
+                firebaseStore.collection("posts").whereLessThan("timestamp", oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(3).addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot value,
+                                        @Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.w(TAG, "Listen failed.", e);
+                            return;
+                        }
+                        for (QueryDocumentSnapshot doc : value) {
+                            UserPost item = doc.toObject(UserPost.class);
+                            if(changedItemPosition!=NOT_CHANGED){ //아이템이 바뀐 경우 1.불러온 데이터가 해당 위치의 데이터인지 비교 2.아니라면 continue
+                                if(postList.get(changedItemPosition).getTimestamp().equals(item.getTimestamp())) {
+                                    postList.get(changedItemPosition).setFavorites(item.getFavorites());
+                                    postList.get(changedItemPosition).setFavoriteCount(item.getFavoriteCount());
+                                    Log.e("change","find");
+                                    changedItemPosition = NOT_CHANGED;
+                                    break;
+                                }else{
+                                    Log.e("change","continue");
+                                    continue;
+                                }
+                            }
+                            postList.add(item);
+                            uidList.add(doc.getId());
+                            counter++;//post 10개 20개 30개 ... 35개 등 확인을 위함 .. 더이상 불러오기 메시지가 뜨지 않게 하기 위함
+                            Log.e("change","snapshot");
+                        }
+                        postCounter = postList.size();
+                        oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
+                        adapter.notifyDataSetChanged();
+                    }
+                });
+                progressOFF();
+            }
+        }
+    };
+
+
+    public class PostRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder> {
         PostRecyclerViewAdapter() {
-            firebaseStore.collection("posts").orderBy("timestamp").addSnapshotListener(new EventListener<QuerySnapshot>() {
+            //postList.clear();
+            firebaseStore.collection("posts").orderBy("timestamp", Query.Direction.DESCENDING).limit(3).addSnapshotListener(new EventListener<QuerySnapshot>() {
                 @Override
                 public void onEvent(@Nullable QuerySnapshot value,
                                     @Nullable FirebaseFirestoreException e) {
@@ -95,17 +175,24 @@ public class HomeFragment extends BaseFragment {
                         Log.w(TAG, "Listen failed.", e);
                         return;
                     }
+                    progressON();
+                    postList.clear();
+                    postCounter = 0;
+                    oldestTimeStamp = null;
                     for (QueryDocumentSnapshot doc : value) {
                         UserPost item = doc.toObject(UserPost.class);
                         postList.add(item);
+                        Log.e("item", item.getUserId());
                         uidList.add(doc.getId());
+                        counter++;
                     }
+                    postCounter = postList.size();
+                    oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
                     notifyDataSetChanged();
+                    progressOFF();
                 }
             });
         }
-
-
 
         @NonNull
         @Override
@@ -123,23 +210,24 @@ public class HomeFragment extends BaseFragment {
                 @Override
                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                     UserData userData = documentSnapshot.toObject(UserData.class);
-                    if(userData.getProfile()!=null) {
-                        Glide.with(holder.itemView.getContext()).load(Uri.parse(userData.getProfile())).into(holder.profileImageView);
-                        userProfile=userData.getProfile();
-                    }
-                    if(userData.getUserName()!=null) {
+                    userProfile = userData.getProfile();
+                    if (userProfile.equals(""))
+                        holder.profileImageView.setImageResource(R.drawable.main_profile);
+                    else
+                        Glide.with(holder.itemView.getContext()).load(Uri.parse(userProfile)).listener(requestListener).into(holder.profileImageView);
+
+                    if (userData.getUserName() != null) {
                         holder.nameTextView.setText(userData.getUserName());
-                        userName=userData.getUserName();
+                        userName = userData.getUserName();
                     }
                 }
             });
             userExplain = postList.get(position).getText();
-            holder.explainTextView.setText(userExplain);
+            holder.explainTextView.setText(postList.get(position).getText());
             holder.favoriteCountTextView.setText("Likes " + postList.get(position).getFavoriteCount());
             holder.favoriteImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Log.e(TAG, "click event");
                     favoriteEvent(p);
                 }
             });
@@ -154,11 +242,11 @@ public class HomeFragment extends BaseFragment {
                 public void onClick(View v) {
                     ProfileFragment fragment = new ProfileFragment();
                     Bundle bundle = new Bundle();
-                    bundle.putString("destinationUid",postList.get(position).getUid());
-                    bundle.putString("userId",postList.get(position).getUserId());
+                    bundle.putString("destinationUid", postList.get(position).getUid());
+                    bundle.putString("userId", postList.get(position).getUserId());
                     fragment.setArguments(bundle);
-                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout,fragment).commit();
-                    ((MainActivity)MainActivity.context).changeBottomNavigationItem(4);
+                    getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.frameLayout, fragment).commit();
+                    ((MainActivity) MainActivity.context).changeBottomNavigationItem(4);
                 }
             });
             holder.postSettingBtn.setOnClickListener(new View.OnClickListener() {
@@ -171,11 +259,11 @@ public class HomeFragment extends BaseFragment {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(getActivity(), CommentActivity.class);
-                    intent.putExtra("filename",postList.get(position).getUid()+"_"+postList.get(position).getTimestamp());
-                    intent.putExtra("name",userName);
-                    intent.putExtra("explain",userExplain);
-                    intent.putExtra("profile",userProfile);
-                    intent.putExtra("destinationUid",postList.get(position).getUid());
+                    intent.putExtra("filename", postList.get(position).getUid() + "_" + postList.get(position).getTimestamp());
+                    intent.putExtra("name", userName);
+                    intent.putExtra("explain", userExplain);
+                    intent.putExtra("profile", userProfile);
+                    intent.putExtra("destinationUid", postList.get(position).getUid());
                     startActivity(intent);
                 }
             });
@@ -183,16 +271,14 @@ public class HomeFragment extends BaseFragment {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(getActivity(), CommentActivity.class);
-                    intent.putExtra("filename",postList.get(position).getUid()+"_"+postList.get(position).getTimestamp());
-                    intent.putExtra("name",userName);
-                    intent.putExtra("explain",userExplain);
-                    intent.putExtra("profile",userProfile);
-                    intent.putExtra("destinationUid",postList.get(position).getUid());
+                    intent.putExtra("filename", postList.get(position).getUid() + "_" + postList.get(position).getTimestamp());
+                    intent.putExtra("name", userName);
+                    intent.putExtra("explain", userExplain);
+                    intent.putExtra("profile", userProfile);
+                    intent.putExtra("destinationUid", postList.get(position).getUid());
                     startActivity(intent);
                 }
             });
-            if(position+1==postList.size())
-                progressOFF();
         }
 
 
@@ -202,6 +288,8 @@ public class HomeFragment extends BaseFragment {
         }
 
         private void favoriteEvent(final int position) {
+            progressON();
+            changedItemPosition=position;
             final DocumentReference docRef = firebaseStore.collection("posts").document(uidList.get(position));
             firebaseStore.runTransaction(new Transaction.Function<Void>() {
                 @Override
@@ -209,11 +297,11 @@ public class HomeFragment extends BaseFragment {
                     String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     UserPost userPost = transaction.get(docRef).toObject(UserPost.class);
                     if (userPost.getFavorites().containsKey(uid)) {
-                        //when btn is clicked
+                        //when btn is clicked before
                         userPost.setFavoriteCount(userPost.getFavoriteCount() - 1);
                         userPost.getFavorites().remove(uid);
                     } else {
-                        //when btn isn't clicked
+                        //when btn isn't clicked before
                         userPost.setFavoriteCount(userPost.getFavoriteCount() + 1);
                         userPost.getFavorites().put(uid, true);
                         favoriteAlarm(postList.get(position).getUid());
@@ -225,18 +313,20 @@ public class HomeFragment extends BaseFragment {
                 @Override
                 public void onSuccess(Void aVoid) {
                     Log.d(TAG, "Transaction success!");
+                    progressOFF();
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
                     Log.w(TAG, "Transaction failure.", e);
+                    progressOFF();
                 }
             });
-
         }
-        private void favoriteAlarm(String destinationUid){
+
+        private void favoriteAlarm(String destinationUid) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),destinationUid,0,"",System.currentTimeMillis());
+            AlarmData alarmData = new AlarmData(user.getEmail(), user.getUid(), destinationUid, 0, "", System.currentTimeMillis());
             FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
         }
 
@@ -265,4 +355,19 @@ public class HomeFragment extends BaseFragment {
         }
 
     }
+
+    private RequestListener<Drawable> requestListener = new RequestListener<Drawable>() {
+
+        @Override
+        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+            progressOFF();
+            return false;
+        }
+
+        @Override
+        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+            progressOFF();
+            return false;
+        }
+    };
 }

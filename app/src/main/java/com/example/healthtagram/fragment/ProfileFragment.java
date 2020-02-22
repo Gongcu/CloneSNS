@@ -18,6 +18,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_grid;
 import com.example.healthtagram.R;
 import com.example.healthtagram.activity.EditProfileActivity;
@@ -166,7 +167,9 @@ public class ProfileFragment extends BaseFragment {
                     followerNumber.setText(userData.getFollower_count()+"");
                     followingNumber.setText(userData.getFollowing_count()+"");
                     if (!userData.getProfile().equals(""))
-                        profilePicture.setImageURI(Uri.parse(userData.getProfile()));
+                        Glide.with(getActivity()).load(Uri.parse(userData.getProfile())).into(profilePicture);
+                    else
+                        profilePicture.setImageResource(R.drawable.main_profile);
                 }
                 progressOFF();
             }
