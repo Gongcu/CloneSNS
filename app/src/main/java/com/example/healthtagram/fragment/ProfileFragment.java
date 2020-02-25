@@ -22,10 +22,8 @@ import com.bumptech.glide.Glide;
 import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_grid;
 import com.example.healthtagram.R;
 import com.example.healthtagram.activity.EditProfileActivity;
-import com.example.healthtagram.activity.SignupActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
-import com.example.healthtagram.listener.OnBackPressedListener;
 import com.example.healthtagram.loading.BaseFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -37,23 +35,19 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Transaction;
 
-import java.util.ArrayList;
-
 
 public class ProfileFragment extends BaseFragment {
-
     private TextView nickname, bio;
     private TextView postNumber,followerNumber,followingNumber;
     private ImageView profilePicture;
     private Button button;
-    private Button editProfileBtn;
-    private FirebaseFirestore db;
-    private FirebaseFirestore firebaseStore;
+    private FirebaseFirestore firestore;
     private FirebaseUser user;
     private DocumentReference docRef;
     private RecyclerView accountRecyclerView;
     private String uid;
-    private ArrayList<String> following_uid_list;
+
+
     private static final int IS_NOT_FIRST_ACCESS = 20;
     public ProfileFragment() {
         // Required empty public constructor
@@ -76,11 +70,9 @@ public class ProfileFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         progressON();
         user = FirebaseAuth.getInstance().getCurrentUser();
-        db = FirebaseFirestore.getInstance();
+        firestore = FirebaseFirestore.getInstance();
         uid = getArguments().getString("destinationUid");
-        firebaseStore = FirebaseFirestore.getInstance();
 
-        button=view.findViewById(R.id.logoutBtn);
         profilePicture = view.findViewById(R.id.profilePicture);
         nickname = view.findViewById(R.id.nickname);
         bio = view.findViewById(R.id.introduction);
@@ -88,33 +80,37 @@ public class ProfileFragment extends BaseFragment {
         followerNumber = view.findViewById(R.id.follower_number);
         followingNumber = view.findViewById(R.id.following_number);
         accountRecyclerView = view.findViewById(R.id.accountRecyclerView);
-        editProfileBtn = view.findViewById(R.id.edit_profile_button);
+        button = view.findViewById(R.id.edit_profile_button);
 
         if(uid.equals(user.getUid())){
             //my profile
             updateProfile(user.getUid()); //본인 uid
             button.setOnClickListener(onClickListener);
-            editProfileBtn.setOnClickListener(onClickListener);
-            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(user.getUid(),postNumber,getActivity()));
+            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(user.getUid(),postNumber,getActivity(),accountRecyclerView));
         }else{
             //others profile
             updateProfile(uid); //타인 uid
-            DocumentReference docRef = db.collection("users").document(user.getUid());
+            DocumentReference docRef = firestore.collection("users").document(user.getUid());
             docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                 @Override
                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                     UserData userData = documentSnapshot.toObject(UserData.class);
                     try {
-                        if(userData.getFollow().containsKey(uid)) //현재 보고있는 프로필(uid)가 팔로우 한 적이 있는지 확인
+                        if(userData.getFollow().containsKey(uid)) { //현재 보고있는 프로필(uid)가 팔로우 한 적이 있는지 확인
                             button.setText("팔로우 취소");
-                        else
+                            button.setTextColor(getResources().getColor(R.color.black));
+                            button.setBackgroundResource(R.drawable.rounded_white_view);
+                        }
+                        else {
                             button.setText("팔로우");
+                            button.setTextColor(getResources().getColor(R.color.white));
+                            button.setBackgroundResource(R.drawable.rounded_blue_view);
+                        }
                     }catch (Exception e){e.printStackTrace();}
                 }
             });
             button.setOnClickListener(onFollowClickListener);
-            editProfileBtn.setVisibility(View.GONE);
-            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(uid,postNumber,getActivity()));
+            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(uid,postNumber,getActivity(),accountRecyclerView));
         }
         accountRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
         //progressOFF();
@@ -125,11 +121,6 @@ public class ProfileFragment extends BaseFragment {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
-                case R.id.logoutBtn:
-                    FirebaseAuth.getInstance().signOut();
-                    startSignupActivity();
-                    getActivity().finish();
-                    break;
                 case R.id.edit_profile_button:
                     startEditProfileActivity();
             }
@@ -143,11 +134,6 @@ public class ProfileFragment extends BaseFragment {
         }
     };
 
-    private void startSignupActivity() {
-        Intent intent = new Intent(getActivity(), SignupActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivity(intent);
-    }
 
     private void startEditProfileActivity() {
         Intent intent = new Intent(getActivity(), EditProfileActivity.class);
@@ -156,7 +142,7 @@ public class ProfileFragment extends BaseFragment {
     }
 
     public void updateProfile(String uid){
-        docRef = db.collection("users").document(uid);
+        docRef = firestore.collection("users").document(uid);
         docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
@@ -177,9 +163,9 @@ public class ProfileFragment extends BaseFragment {
     }
 
     private void followEvent(final String uid) { //destinationUid를 넘겨받음
-        final DocumentReference myRef = firebaseStore.collection("users").document(user.getUid()); //본인 uid
-        final DocumentReference destinationRef = firebaseStore.collection("users").document(uid); //본인 uid
-        firebaseStore.runTransaction(new Transaction.Function<Void>() {
+        final DocumentReference myRef = firestore.collection("users").document(user.getUid()); //본인 uid
+        final DocumentReference destinationRef = firestore.collection("users").document(uid); //본인 uid
+        firestore.runTransaction(new Transaction.Function<Void>() {
             @Override
             public Void apply(Transaction transaction) throws FirebaseFirestoreException {
                 UserData userData = transaction.get(myRef).toObject(UserData.class);
@@ -191,6 +177,8 @@ public class ProfileFragment extends BaseFragment {
                     otherUserData.setFollower_count(otherUserData.getFollower_count()-1);
                     followerNumber.setText((Integer.parseInt(followerNumber.getText().toString())-1)+"");
                     button.setText("팔로우");
+                    button.setTextColor(getResources().getColor(R.color.white));
+                    button.setBackgroundResource(R.drawable.rounded_blue_view);
                 } else {
                     //when doesn't followed
                     userData.setFollowing_count(userData.getFollowing_count() + 1);
@@ -199,6 +187,8 @@ public class ProfileFragment extends BaseFragment {
                     followerNumber.setText((Integer.parseInt(followerNumber.getText().toString())+1)+"");
                     followAlarm(uid);
                     button.setText("팔로우 취소");
+                    button.setTextColor(getResources().getColor(R.color.black));
+                    button.setBackgroundResource(R.drawable.rounded_white_view);
                 }
                 transaction.set(myRef, userData);
                 transaction.set(destinationRef, otherUserData);

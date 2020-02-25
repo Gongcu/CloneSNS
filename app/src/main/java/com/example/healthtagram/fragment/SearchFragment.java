@@ -36,7 +36,7 @@ public class SearchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         recyclerView = view.findViewById(R.id.gridRecyclerView);
-        recyclerView.setAdapter(new RecyclerViewAdapter_grid(getActivity()));
+        recyclerView.setAdapter(new RecyclerViewAdapter_grid(getActivity(),recyclerView));
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
     }
 }

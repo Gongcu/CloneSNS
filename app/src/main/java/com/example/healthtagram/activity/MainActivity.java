@@ -15,6 +15,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.example.healthtagram.R;
@@ -35,6 +37,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class MainActivity extends AppCompatActivity {
     public static Context context;
     public static int UPLOAD = 100;
+    private Button logoutBtn;
     private FirebaseUser user;
     private FirebaseFirestore db;
     private BottomNavigationView bottomNavigationView;
@@ -83,7 +86,8 @@ public class MainActivity extends AppCompatActivity {
 
             });
         }
-
+        logoutBtn = findViewById(R.id.logoutBtn);
+        logoutBtn.setOnClickListener(onClickListener);
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setOnNavigationItemSelectedListener(new ItemSelectedListener());
         bottomNavigationView.setSelectedItemId(R.id.action_home);
@@ -95,6 +99,19 @@ public class MainActivity extends AppCompatActivity {
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }
+
+    View.OnClickListener onClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()){
+                case R.id.logoutBtn:
+                    FirebaseAuth.getInstance().signOut();
+                    startActivity(SignupActivity.class);
+                    finish();
+                    break;
+            }
+        }
+    };
 
     class ItemSelectedListener implements BottomNavigationView.OnNavigationItemSelectedListener {
         @Override

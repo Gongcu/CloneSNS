@@ -54,6 +54,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
     public static final int COMMENT = 1;
     public static final int FOLLOW = 2;
     private int item_counter = 0;
+    private int times = 1; //스크롤 횟수
     private Activity activity;
     private AppCompatDialog progressDialog;
     private String uid;
@@ -79,6 +80,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
                     alarmList.add(item);
                     Log.e(TAG, "Listen success.");
                 }
+                item_counter=alarmList.size();
                 oldestTimeStamp = alarmList.get(alarmList.size()-1).getTimestamp();
                 notifyDataSetChanged();
             }
@@ -91,7 +93,6 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
     @Override
     public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_comment, parent, false);
-        item_counter++;
         return new ItemViewHolder(view);
     }
 
@@ -116,7 +117,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 UserData userData = documentSnapshot.toObject(UserData.class);
-                Glide.with(holder.itemView.getContext()).load(Uri.parse(userData.getProfile())).error(R.drawable.main_profile).into(holder.alarm_profile);
+                Glide.with(holder.itemView.getContext()).load(Uri.parse(userData.getProfile())).error(R.drawable.main_profile).listener(requestListener).into(holder.alarm_profile);
                 if (!userData.getUserName().equals(""))
                     holder.alarm_username.setText(userData.getUserName());
             }
@@ -151,8 +152,8 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
             counter++;
             if (counter >= item_counter) {
+                Log.e("glide, cout",counter+", "+item_counter);
                 progressOFF();
-
             }
             return false;
         }
@@ -161,6 +162,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
             counter++;
             if (counter >= item_counter) {
+                Log.e("glide, cout",counter+", "+item_counter);
                 progressOFF();
             }
             return false;
@@ -205,7 +207,11 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
             //마지막 게시글인지 체크
+            if(item_counter<=times*10){
+                progressOFF();
+            }
             if (!recyclerView.canScrollVertically(1)) {
+                progressON();
                 FirebaseFirestore.getInstance().collection("alarms").whereEqualTo("destinationUid", uid).whereLessThan("timestamp",oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(10).addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value,
@@ -218,10 +224,14 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
                             AlarmData item = doc.toObject(AlarmData.class);
                             alarmList.add(item);
                         }
+                        item_counter=alarmList.size();
+                        times++;
                         oldestTimeStamp = alarmList.get(alarmList.size() - 1).getTimestamp();
+                        notifyDataSetChanged();
                     }
                 });
             }
         }
     };
+
 }
