@@ -92,13 +92,13 @@ public class ProfileFragment extends BaseFragment {
 
         if(uid.equals(user.getUid())){
             //my profile
-            updateProfile(user.getUid());
+            updateProfile(user.getUid()); //본인 uid
             button.setOnClickListener(onClickListener);
             editProfileBtn.setOnClickListener(onClickListener);
             accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(user.getUid(),postNumber,getActivity()));
         }else{
             //others profile
-            updateProfile(uid);
+            updateProfile(uid); //타인 uid
             DocumentReference docRef = db.collection("users").document(user.getUid());
             docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                 @Override

@@ -77,8 +77,9 @@ public class HomeFragment extends BaseFragment {
     private Long oldestTimeStamp;
     private int postCounter = 0;
     private int counter = 1;
-    private int log = 0;
+    private int bind_counter=0;
     private int changedItemPosition=1000000;
+    private int post_number=0;
 
     private ArrayList<UserPost> postList = new ArrayList<>();
     private ArrayList<String> uidList = new ArrayList<>();
@@ -123,9 +124,8 @@ public class HomeFragment extends BaseFragment {
             if (!recyclerView.canScrollVertically(1)) {
                 progressON();
                 if (postCounter == counter) {
-                    Toast.makeText(getActivity(), "게시물 로딩 중...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), getString(R.string.loading_post), Toast.LENGTH_SHORT).show();
                 }
-
                 firebaseStore.collection("posts").whereLessThan("timestamp", oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(3).addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value,
@@ -137,13 +137,16 @@ public class HomeFragment extends BaseFragment {
                         for (QueryDocumentSnapshot doc : value) {
                             UserPost item = doc.toObject(UserPost.class);
                             if(changedItemPosition!=NOT_CHANGED){ //아이템이 바뀐 경우 1.불러온 데이터가 해당 위치의 데이터인지 비교 2.아니라면 continue
-                                if(postList.get(changedItemPosition).getTimestamp().equals(item.getTimestamp())) {
+                                if(changedItemPosition<3) {
+                                    changedItemPosition=NOT_CHANGED; //첫번째 아이템들은 리사이클러뷰 어답터 스냅샷에서 처리 되므로 배제하는 코드
+                                }
+                                else if(postList.get(changedItemPosition).getTimestamp().equals(item.getTimestamp())) {
                                     postList.get(changedItemPosition).setFavorites(item.getFavorites());
                                     postList.get(changedItemPosition).setFavoriteCount(item.getFavoriteCount());
                                     Log.e("change","find");
                                     changedItemPosition = NOT_CHANGED;
                                     break;
-                                }else{
+                                }else {
                                     Log.e("change","continue");
                                     continue;
                                 }
@@ -158,7 +161,6 @@ public class HomeFragment extends BaseFragment {
                         adapter.notifyDataSetChanged();
                     }
                 });
-                progressOFF();
             }
         }
     };
@@ -167,6 +169,7 @@ public class HomeFragment extends BaseFragment {
     public class PostRecyclerViewAdapter extends RecyclerView.Adapter<ItemViewHolder> {
         PostRecyclerViewAdapter() {
             //postList.clear();
+            //progressON();
             firebaseStore.collection("posts").orderBy("timestamp", Query.Direction.DESCENDING).limit(3).addSnapshotListener(new EventListener<QuerySnapshot>() {
                 @Override
                 public void onEvent(@Nullable QuerySnapshot value,
@@ -175,7 +178,6 @@ public class HomeFragment extends BaseFragment {
                         Log.w(TAG, "Listen failed.", e);
                         return;
                     }
-                    progressON();
                     postList.clear();
                     postCounter = 0;
                     oldestTimeStamp = null;
@@ -187,9 +189,9 @@ public class HomeFragment extends BaseFragment {
                         counter++;
                     }
                     postCounter = postList.size();
+                    post_number+=postList.size();
                     oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
                     notifyDataSetChanged();
-                    progressOFF();
                 }
             });
         }
@@ -198,6 +200,8 @@ public class HomeFragment extends BaseFragment {
         @Override
         public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_detail, parent, false);
+            bind_counter++;
+            Log.e("counter b, p",bind_counter+","+post_number);
             return new ItemViewHolder(view);
         }
 
@@ -211,11 +215,10 @@ public class HomeFragment extends BaseFragment {
                 public void onSuccess(DocumentSnapshot documentSnapshot) {
                     UserData userData = documentSnapshot.toObject(UserData.class);
                     userProfile = userData.getProfile();
-                    if (userProfile.equals(""))
-                        holder.profileImageView.setImageResource(R.drawable.main_profile);
-                    else
-                        Glide.with(holder.itemView.getContext()).load(Uri.parse(userProfile)).listener(requestListener).into(holder.profileImageView);
-
+                    //if (!userProfile.equals(""))
+                    Glide.with(holder.itemView.getContext()).load(Uri.parse(userProfile)).error(R.drawable.main_profile).listener(requestListener).into(holder.profileImageView);
+                   // else
+                      //  Glide.with(holder.itemView.getContext()).load(R.drawable.main_profile).into(holder.profileImageView);
                     if (userData.getUserName() != null) {
                         holder.nameTextView.setText(userData.getUserName());
                         userName = userData.getUserName();
@@ -357,17 +360,27 @@ public class HomeFragment extends BaseFragment {
     }
 
     private RequestListener<Drawable> requestListener = new RequestListener<Drawable>() {
-
+        int counter=0;
         @Override
         public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-            progressOFF();
+            counter++;
+            if(counter>=post_number) {
+                Log.e("x", "x");
+                progressOFF();
+            }
             return false;
         }
 
         @Override
         public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-            progressOFF();
+            counter++;
+            if(counter>=post_number) {
+                Log.e("x", "x");
+                progressOFF();
+            }
+            Log.e("counter",counter+","+postCounter);
             return false;
         }
     };
+
 }

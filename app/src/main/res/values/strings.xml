@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Healthtagram</string>
+    <string name="app_name">Yours</string>
     <string name="facebook_app_id">231871261307978</string>
     <string name="fb_login_protocol_scheme">fb231871261307978</string>
 
@@ -10,4 +10,17 @@
     <string name="description_info">Info</string>
     <string name="request_permission">This sample needs camera permission.</string>
     <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <string name="upload_success">업로드 성공</string>
+    <string name="edit_profile_success">프로필 편집 성공</string>
+    <string name="edit_profile_fail">닉네임과 설명을 입력해주세요</string>
+    <string name="login_failed">이메일 혹은 비밀번호를 확인해주세요.</string>
+    <string name="auth_failed">인증 실패</string>
+    <string name="permission_failed">권한을 승인하셔야 앱을 사용할 수 있습니다.</string>
+    <string name="password_email_send">메일을 전송했습니다.</string>
+    <string name="password_email_failed">메일을 다시 확인해주세요.</string>
+    <string name="signup_success">회원가입 성공</string>
+    <string name="signup_failed">회원가입 실패</string>
+    <string name="password_not_equal">비밀번호가 서로 다릅니다.</string>
+    <string name="signup_null_failed">이메일 혹은 비밀번호를 확인해주세요.</string>
+    <string name="loading_post">게시물 로딩중</string>
 </resources>

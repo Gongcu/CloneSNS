@@ -14,7 +14,7 @@
     <item
         android:id="@+id/action_exercise"
         android:enabled="true"
-        android:icon="@drawable/bottom_exercise_selector"
+        android:icon="@drawable/bottom_write"
         android:title="일정 추가"/>
 
     <item

@@ -25,7 +25,6 @@ import java.io.IOException;
 public class CropImageActivity extends AppCompatActivity {
     private CropImageView cropImageView;
     private TextView cropTitle;
-    private Uri croppedUri;
     public static final int SQUARE =1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

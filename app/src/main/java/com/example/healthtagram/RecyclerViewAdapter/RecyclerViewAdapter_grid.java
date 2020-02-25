@@ -89,7 +89,6 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         ImageView imageView = ((RecyclerViewAdapter_grid.CustomViewHolder)holder).imageView;
         Glide.with(holder.itemView.getContext()).load(postList.get(position).getPhoto()).apply(RequestOptions.centerCropTransform()).into(imageView);
-        Log.e("photo",postList.get(position).getPhoto());
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

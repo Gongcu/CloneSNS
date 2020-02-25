@@ -37,6 +37,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
@@ -50,7 +51,7 @@ public class UploadActivity extends BaseActivity {
     private DatabaseReference mDatabase;// ...
     private FirebaseFirestore firestore;
     private FirebaseStorage storage;
-    private ImageView imageView;
+    private CropImageView imageView;
     private ImageView getPhotoBtn;
     private Button  confirmBtn, closeBtn;
     private TextInputEditText textInputEditText;
@@ -65,6 +66,8 @@ public class UploadActivity extends BaseActivity {
         storage = FirebaseStorage.getInstance();
 
         imageView = findViewById(R.id.imageView);
+        imageView.setCropShape(CropImageView.CropShape.RECTANGLE);
+
         getPhotoBtn = findViewById(R.id.pickPhoto);
         confirmBtn = findViewById(R.id.confirm_btn);
         closeBtn = findViewById(R.id.close_btn);
@@ -108,9 +111,10 @@ public class UploadActivity extends BaseActivity {
         final StorageReference ImagesRef = storageRef.child("posts/"+filename+".jpg");
         imageView.setDrawingCacheEnabled(true);
         imageView.buildDrawingCache();
-        Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+        Bitmap bitmap = imageView.getCroppedImage();
+        //Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 40, baos);
         byte[] data = baos.toByteArray();
 
         UploadTask uploadTask = ImagesRef.putBytes(data);
@@ -127,7 +131,6 @@ public class UploadActivity extends BaseActivity {
             public void onComplete(@NonNull Task<Uri> task) {
                 if (task.isSuccessful()) {
                     selectedImageUri = task.getResult();
-                    Log.e("iamgeUri",selectedImageUri.toString());
                     if (selectedImageUri != null && !text.equals("")){
                         firestore.collection("posts").document(filename)
                                 .set(new UserPost(selectedImageUri.toString(), text,time,user.getUid(),user.getEmail()))
@@ -135,8 +138,7 @@ public class UploadActivity extends BaseActivity {
                                     @Override
                                     public void onSuccess(Void aVoid) {
                                         progressOFF();
-                                        Toast.makeText(UploadActivity.this, "업로드 성공", Toast.LENGTH_SHORT).show();
-                                        Log.e("업로드","성공");
+                                        Toast.makeText(UploadActivity.this, getString(R.string.upload_success), Toast.LENGTH_SHORT).show();
                                         setResult(RESULT_OK);
                                         finish();
                                     }
@@ -145,7 +147,6 @@ public class UploadActivity extends BaseActivity {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
                                         progressOFF();
-                                        Log.e("업로드","실패");
                                     }
                                 });
                     }
@@ -162,11 +163,13 @@ public class UploadActivity extends BaseActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FROM_ALBUM && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            if(data.getData()!=null)
-                goCrop(data.getData());
+            if(data.getData()!=null) {
+                imageView.setImageUriAsync(data.getData());
+                selectedImageUri=data.getData();
+            }
         }
         else if(requestCode == REQUEST_CROP && resultCode == RESULT_OK){
-            imageView.setImageURI(data.getData());
+            //imageView.setImageURI(data.getData());
             selectedImageUri=data.getData();
         }
         else{
@@ -179,13 +182,5 @@ public class UploadActivity extends BaseActivity {
         setResult(RESULT_OK);
         super.onBackPressed();
         finish();
-    }
-
-    private void goCrop(Uri sourUri) {
-        final int SQUARE  =1;
-        Intent intent = new Intent(UploadActivity.this, CropImageActivity.class);
-        intent.setData(sourUri);
-        intent.putExtra("style",SQUARE);
-        startActivityForResult(intent, REQUEST_CROP);
     }
 }

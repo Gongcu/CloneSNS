@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.healthtagram.R;
 import com.example.healthtagram.crop.CropImageActivity;
 import com.example.healthtagram.fragment.ProfileFragment;
@@ -99,10 +100,11 @@ public class EditProfileActivity extends BaseActivity {
         // Access a Cloud Firestore instance from your Activity
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
         if (nickname.equals("") || bio.equals("")) {
-            Toast.makeText(this, "닉네임과 설명을 입력해주세요", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.edit_profile_fail), Toast.LENGTH_LONG).show();
             progressOFF();
             return;
         }
+        /**이미지 업로드 없이 프로필 편집할 경우*/
         if (selectedImageUri == null) {
             UserData userData = new UserData(nickname, "", bio);
             db.collection("users").document(user.getUid())
@@ -111,7 +113,7 @@ public class EditProfileActivity extends BaseActivity {
                         @Override
                         public void onSuccess(Void aVoid) {
                             progressOFF();
-                            Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(EditProfileActivity.this, getString(R.string.edit_profile_success), Toast.LENGTH_SHORT).show();
                             ((MainActivity) MainActivity.context).callFragmentUpdateMethod(state);
                             finish();
                         }
@@ -123,7 +125,7 @@ public class EditProfileActivity extends BaseActivity {
                         }
                     });
         }
-        // Create a storage reference from our app
+        /** 이미지 업로드 후 프로필 편집할 경우*/
         StorageReference storageRef = storage.getReference();
         final StorageReference ImagesRef = storageRef.child("profiles/" + user.getUid() + ".jpg");
         profilePicture.setDrawingCacheEnabled(true);
@@ -156,7 +158,7 @@ public class EditProfileActivity extends BaseActivity {
                                     @Override
                                     public void onSuccess(Void aVoid) {
                                         progressOFF();
-                                        Toast.makeText(EditProfileActivity.this, "프로필 편집 성공", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(EditProfileActivity.this, getString(R.string.edit_profile_success), Toast.LENGTH_SHORT).show();
                                         ((MainActivity) MainActivity.context).callFragmentUpdateMethod(state);
                                         finish();
                                     }
@@ -217,20 +219,14 @@ public class EditProfileActivity extends BaseActivity {
                     nickName.setText(userData.getUserName());
                     introduction.setText(userData.getBio());
                     if (!userData.getProfile().equals(""))
-                        profilePicture.setImageURI(Uri.parse(userData.getProfile()));
+                        profilePicture.setImageResource(R.drawable.main_profile);
+                    else
+                        Glide.with(getApplicationContext()).load(Uri.parse(userData.getProfile()));
                 }
                 progressOFF();
             }
         });
     }
 
-    public static final Uri getUriToDrawable(@NonNull Context context,
-                                             @AnyRes int drawableId) {
-        Uri imageUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE +
-                "://" + context.getResources().getResourcePackageName(drawableId)
-                + '/' + context.getResources().getResourceTypeName(drawableId)
-                + '/' + context.getResources().getResourceEntryName(drawableId));
-        return imageUri;
-    }
 }
 

@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -13,11 +12,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
 import com.example.healthtagram.R;
@@ -26,25 +23,17 @@ import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.fragment.SearchFragment;
-import com.example.healthtagram.fragment.UploadFragment;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-
-import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
     public static Context context;
-    public static String TAG = "MAINACTIVITY";
     public static int UPLOAD = 100;
     private FirebaseUser user;
     private FirebaseFirestore db;
@@ -52,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private HomeFragment fragmentHome = new HomeFragment();
     private SearchFragment fragmentSearch = new SearchFragment();
-    private UploadFragment fragmentUpload = new UploadFragment();
     private HistoryFragment fragmentHistory = new HistoryFragment();
     private ProfileFragment fragmentProfile = new ProfileFragment();
     private String[] permissions = {
@@ -168,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 } else {
-                    Toast.makeText(getApplicationContext(), "권한을 승인하셔야 앱이 이용 가능합니다.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), getString(R.string.permission_failed), Toast.LENGTH_SHORT).show();
                     ActivityCompat.requestPermissions(this, permissions, PERMISSION_CODE);
                 }
                 return;
@@ -214,4 +202,6 @@ public class MainActivity extends AppCompatActivity {
                 activity.findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
+
+
 }

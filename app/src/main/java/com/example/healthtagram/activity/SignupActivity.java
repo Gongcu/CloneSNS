@@ -71,22 +71,22 @@ public class SignupActivity extends AppCompatActivity {
                             @Override
                             public void onComplete(@NonNull Task<AuthResult> task) {
                                 if (task.isSuccessful()) {
-                                    Toast.makeText(getApplicationContext(), "회원가입이 성공했습니다.", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getApplicationContext(), getString(R.string.signup_success), Toast.LENGTH_SHORT).show();
                                     FirebaseUser user = mAuth.getCurrentUser();
                                     gotoLogin();
                                     //성공시 UI
                                 } else {
-                                    Toast.makeText(getApplicationContext(), "회원가입에 실패했습니다.", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getApplicationContext(), getString(R.string.signup_failed), Toast.LENGTH_SHORT).show();
                                     //실패시 UI
                                 }
                                 // ...
                             }
                         });
             } else {
-                Toast.makeText(this, "비밀번호가 서로 다릅니다", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.password_not_equal), Toast.LENGTH_SHORT).show();
             }
         } else
-            Toast.makeText(this, "올바른 형식을 입력해주세요", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.signup_null_failed), Toast.LENGTH_SHORT).show();
     }
     private void gotoLogin(){
         Intent intent = new Intent(this, LoginActivity.class);

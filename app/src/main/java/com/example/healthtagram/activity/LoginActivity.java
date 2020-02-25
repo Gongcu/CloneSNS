@@ -118,7 +118,7 @@ public class LoginActivity extends AppCompatActivity {
                             if (task.isSuccessful()) {
                                 startActivity(MainActivity.class);
                             } else {
-                                Toast.makeText(getApplicationContext(), "이메일 혹은 비밀번호를 확인하세요.",
+                                Toast.makeText(getApplicationContext(), getString(R.string.login_failed),
                                         Toast.LENGTH_SHORT).show();
                             }
 
@@ -126,7 +126,7 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     });
         }else{
-            Toast.makeText(this, "올바른 형식을 입력해주세요.",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.login_failed),Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -162,8 +162,6 @@ public class LoginActivity extends AppCompatActivity {
 
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
-
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -177,7 +175,7 @@ public class LoginActivity extends AppCompatActivity {
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
-                            Snackbar.make(findViewById(R.id.main_layout), "Authentication Failed.", Snackbar.LENGTH_SHORT).show();
+                            Snackbar.make(findViewById(R.id.main_layout), getString(R.string.auth_failed), Snackbar.LENGTH_SHORT).show();
                         }
 
                         // ...
@@ -190,7 +188,6 @@ public class LoginActivity extends AppCompatActivity {
         LoginManager.getInstance().registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                Log.d(TAG, "facebook:onSuccess:" + loginResult);
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
 
@@ -225,7 +222,7 @@ public class LoginActivity extends AppCompatActivity {
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
-                            Snackbar.make(findViewById(R.id.main_layout), "Authentication Failed.", Snackbar.LENGTH_SHORT).show();
+                            Snackbar.make(findViewById(R.id.main_layout), getString(R.string.auth_failed), Snackbar.LENGTH_SHORT).show();
                         }
 
                         // [START_EXCLUDE]
