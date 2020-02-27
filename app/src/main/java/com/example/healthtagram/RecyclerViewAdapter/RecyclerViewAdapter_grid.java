@@ -2,6 +2,7 @@ package com.example.healthtagram.RecyclerViewAdapter;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
@@ -24,6 +25,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.healthtagram.R;
+import com.example.healthtagram.activity.TimelineActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserPost;
 import com.facebook.login.LoginManager;
@@ -66,7 +68,8 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
                     postList.add(item);
                 }
                 item_counter=postList.size();
-                oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
+                if(postList.size()>0)
+                    oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
                 postNumber.setText((postList.size())+"");
                 notifyDataSetChanged();
             }
@@ -119,6 +122,10 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
             @Override
             public void onClick(View v) {
                 //클릭시 해당 유저의 포스트들만 homefragment처럼 보며줌 프로필바텀아이템 클릭상태
+                Intent intent = new Intent(activity, TimelineActivity.class);
+                intent.putExtra("uid",postList.get(position).getUid());
+                intent.putExtra("timestamp",postList.get(position).getTimestamp());
+                activity.startActivity(intent);
             }
         });
     }

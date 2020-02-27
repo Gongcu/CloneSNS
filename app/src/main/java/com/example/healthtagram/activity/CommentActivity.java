@@ -48,7 +48,6 @@ public class CommentActivity extends BaseActivity {
     private RecyclerView recyclerView;
     private RecyclerViewAdapter_comment adapter;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,6 +86,7 @@ public class CommentActivity extends BaseActivity {
         commentEditText.setText("");
     }
     private void init(){
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         Intent intent = getIntent();
         filename = intent.getExtras().getString("filename");
         name=intent.getExtras().getString("name");
@@ -94,16 +94,17 @@ public class CommentActivity extends BaseActivity {
         profile=intent.getExtras().getString("profile");
         destinationUid=intent.getExtras().getString("destinationUid");
 
+
         Glide.with(this).load(Uri.parse(profile)).into(post_owner_profile);
         post_owner_name.setText(name);
         post_owner_explain.setText(explain);
 
-        FirebaseFirestore.getInstance().collection("users").document(user.getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+        firestore.collection("users").document(user.getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 UserData userData = documentSnapshot.toObject(UserData.class);
                 if(userData.getProfile()!=null)
-                    Glide.with(getApplicationContext()).load(Uri.parse(userData.getProfile())).into(write_commnet_profile);
+                    Glide.with(getApplicationContext()).load(Uri.parse(userData.getProfile())).error(R.drawable.main_profile).into(write_commnet_profile);
             }
         });
     }

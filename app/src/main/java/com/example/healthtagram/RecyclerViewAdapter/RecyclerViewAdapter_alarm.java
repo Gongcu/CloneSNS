@@ -34,6 +34,7 @@ import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
+import com.example.healthtagram.loading.BaseApplication;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -56,7 +57,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
     private int item_counter = 0;
     private int times = 1; //스크롤 횟수
     private Activity activity;
-    private AppCompatDialog progressDialog;
+    private BaseApplication progressDialog;
     private String uid;
     private RecyclerView recyclerView;
     private Long oldestTimeStamp;
@@ -65,6 +66,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         this.uid = uid;
         this.activity = activity;
         this.recyclerView = recyclerView;
+        progressDialog = BaseApplication.getInstance();
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         firestore.collection("alarms").whereEqualTo("destinationUid", uid).orderBy("timestamp", Query.Direction.DESCENDING).limit(10).addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
@@ -153,7 +155,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
             counter++;
             if (counter >= item_counter) {
                 Log.e("glide, cout",counter+", "+item_counter);
-                progressOFF();
+                progressDialog.progressOFF();
             }
             return false;
         }
@@ -163,40 +165,12 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
             counter++;
             if (counter >= item_counter) {
                 Log.e("glide, cout",counter+", "+item_counter);
-                progressOFF();
+                progressDialog.progressOFF();
             }
             return false;
         }
     };
 
-    public void progressON() {
-        if (activity == null || activity.isFinishing()) {
-            return;
-        }
-
-        progressDialog = new AppCompatDialog(activity);
-        progressDialog.setCancelable(false);
-        progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
-        progressDialog.setContentView(R.layout.progress_loading);
-        progressDialog.show();
-
-
-        final ImageView img_loading_frame = (ImageView) progressDialog.findViewById(R.id.iv_frame_loading);
-        final AnimationDrawable frameAnimation = (AnimationDrawable) img_loading_frame.getBackground();
-        img_loading_frame.post(new Runnable() {
-            @Override
-            public void run() {
-                frameAnimation.start();
-            }
-        });
-
-    }
-
-    public void progressOFF() {
-        if (progressDialog != null && progressDialog.isShowing()) {
-            progressDialog.dismiss();
-        }
-    }
     RecyclerView.OnScrollListener listener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -208,10 +182,10 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
             super.onScrolled(recyclerView, dx, dy);
             //마지막 게시글인지 체크
             if(item_counter<=times*10){
-                progressOFF();
+                progressDialog.progressOFF();
             }
             if (!recyclerView.canScrollVertically(1)) {
-                progressON();
+                progressDialog.progressON(activity);
                 FirebaseFirestore.getInstance().collection("alarms").whereEqualTo("destinationUid", uid).whereLessThan("timestamp",oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(10).addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value,

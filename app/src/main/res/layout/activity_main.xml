@@ -38,15 +38,6 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!--
-    <View
-        android:id="@+id/shadowView"
-        android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:layout_above="@id/bottomNavigationView"
-        android:background="@drawable/shadow"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView" />-->
-
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:elevation="10dp"
         android:layout_marginTop="3dp"
