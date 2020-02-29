@@ -118,16 +118,6 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         ImageView imageView = ((RecyclerViewAdapter_grid.CustomViewHolder)holder).imageView;
         Glide.with(holder.itemView.getContext()).load(postList.get(position).getPhoto()).apply(RequestOptions.centerCropTransform()).into(imageView);
-        imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //클릭시 해당 유저의 포스트들만 homefragment처럼 보며줌 프로필바텀아이템 클릭상태
-                Intent intent = new Intent(activity, TimelineActivity.class);
-                intent.putExtra("uid",postList.get(position).getUid());
-                intent.putExtra("timestamp",postList.get(position).getTimestamp());
-                activity.startActivity(intent);
-            }
-        });
     }
 
     @Override
@@ -141,7 +131,18 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
         public CustomViewHolder(@NonNull ImageView imageView) {
             super(imageView);
             this.imageView = (ImageView) imageView;
+            imageView.setOnClickListener(onClickListener);
         }
+        View.OnClickListener onClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //클릭시 해당 유저의 포스트들만 homefragment처럼 보며줌 프로필바텀아이템 클릭상태
+                Intent intent = new Intent(activity, TimelineActivity.class);
+                intent.putExtra("uid",postList.get(getAdapterPosition()).getUid());
+                intent.putExtra("timestamp",postList.get(getAdapterPosition()).getTimestamp());
+                activity.startActivity(intent);
+            }
+        };
     }
 
     RecyclerView.OnScrollListener listener_search = new RecyclerView.OnScrollListener() {

@@ -14,7 +14,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +39,7 @@ import com.example.healthtagram.activity.MainActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
+import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseFragment;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -86,6 +89,16 @@ public class HomeFragment extends BaseFragment {
         // Inflate the layout for this fragment
         recyclerView = view.findViewById(R.id.post_recyclerView);
         adapter = new RecyclerViewAdapter_post(getActivity(),getActivity().getSupportFragmentManager(),recyclerView);
+        adapter.setHasStableIds(true);
+        RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
+        if (animator instanceof SimpleItemAnimator) {
+            ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+        }
+        adapter.setPostScrollToPositionListener(new PostScrollToPositionListener() {
+            @Override
+            public void onSuccessListener(final int position) {
+            }
+        });
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         return view;
