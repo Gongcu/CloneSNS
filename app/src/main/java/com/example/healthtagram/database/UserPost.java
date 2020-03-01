@@ -9,26 +9,41 @@ public class UserPost {
     private Long timestamp;
     private String uid;  //getUid()
     private String userId; //유저 이미지 관리
+    private String userName;
+    private String userProfile;
     private int favoriteCount;  //좋아요 수
     private Map<String, Boolean> favorites; //좋아요 중복 방지
 
 
     public UserPost(){}
 
-    public UserPost(String photo, String text, Long timestamp) {
-        this.photo = photo;
-        this.text = text;
-        this.timestamp = timestamp;
-    }
 
-    public UserPost(String photo, String text, Long timestamp, String uid, String userId) {
+    public UserPost(String photo, String text, Long timestamp, String uid, String userId,String userName,String userProfile) {
         this.photo = photo;
         this.text = text;
         this.timestamp = timestamp;
         this.uid = uid;
         this.userId = userId;
+        this.userName=userName;
+        this.userProfile=userProfile;
         favoriteCount=0;
         favorites= new HashMap<>();
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserProfile() {
+        return userProfile;
+    }
+
+    public void setUserProfile(String userProfile) {
+        this.userProfile = userProfile;
     }
 
     public String getUid() {

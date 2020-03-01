@@ -69,7 +69,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     private int whatIsTarget = 100;
     public static final int HOME = 0;
     public static final int TIMELINE = 1;
-    private BaseApplication progress;
+    private BaseApplication progress=BaseApplication.getInstance();
     private FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private ArrayList<UserPost> postList = new ArrayList<>();
     private ArrayList<String> uidList = new ArrayList<>();
@@ -77,16 +77,18 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     private String uid;
     private String currentUid;
     private String userProfile;
-    private String userName;
     private String userExplain;
 
-    public static final int NOT_CHANGED = 1000000;
+    //Variables For Alarm Data
+    private String currentUserName="";
+    private String currentUserProfile="";
+
     public static final int FIRST = 1;
     private int isFirst = 1;
     private Long oldestTimeStamp = 99999999999999L;
     private int postCounter = 0;
     private int counter = 1;
-    private int changedItemPosition = 1000000;
+
     private int post_number = 0;
     private Long selected_item_timestamp;
 
@@ -101,12 +103,19 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
      */
     public RecyclerViewAdapter_post(Activity activity, FragmentManager fragmentManager, RecyclerView recyclerView) {
         whatIsTarget = HOME;
-        progress = BaseApplication.getInstance();
         this.activity = activity;
         this.fragmentManager = fragmentManager;
         this.recyclerView = recyclerView;
         postList.clear();
         currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        firestore.collection("users").document(currentUid).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                UserData userData = documentSnapshot.toObject(UserData.class);
+                currentUserName=userData.getUserName();
+                currentUserProfile=userData.getProfile();
+            }
+        });
         collectionReference.orderBy("timestamp", Query.Direction.DESCENDING).limit(3).addSnapshotListener(postListener);
         recyclerView.addOnScrollListener(onScrollListener);
     }
@@ -116,15 +125,20 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
      */
     public RecyclerViewAdapter_post(Activity activity, RecyclerView recyclerView, final String uid, final Long timestamp) {
         whatIsTarget = TIMELINE;
-        progress = BaseApplication.getInstance();
         this.activity = activity;
         this.recyclerView = recyclerView;
         postList.clear();
         this.uid = uid;
         this.currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         this.selected_item_timestamp = timestamp;
-
-        Log.e("Timestamp", "getIntent" + timestamp);
+        firestore.collection("users").document(currentUid).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                UserData userData = documentSnapshot.toObject(UserData.class);
+                currentUserName=userData.getUserName();
+                currentUserProfile=userData.getProfile();
+            }
+        });
         //1번작업. 선택된 아이템 이후 세번째 아이템의 timestamp를 구해온 뒤
         collectionReference.whereEqualTo("uid", uid).whereLessThan("timestamp", timestamp)
                 .orderBy("timestamp", Query.Direction.DESCENDING).limit(3).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -202,9 +216,6 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
                 }
                 postScrollToPositionListener.onSuccessListener(position);
                 isFirst = 2;
-            } else {
-                //if(index!=0)
-                //postScrollToPositionListener.onSuccessListener(index);
             }
         }
     };
@@ -225,6 +236,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     public void onBindViewHolder(@NonNull final ItemViewHolder holder, int position) {
         //이미지 로딩 라이브러리 glide
         Glide.with(holder.itemView.getContext()).load(Uri.parse(postList.get(position).getPhoto())).into(holder.postImageView);
+        if(postList.get(position).getUserName()==null)
         firestore.collection("users").document(postList.get(position).getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
@@ -238,12 +250,15 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
 
                 if (userData.getUserName() != null) {
                     holder.nameTextView.setText(userData.getUserName());
-                    userName = userData.getUserName();
                 }
             }
         });
+        else{
+            Glide.with(holder.itemView.getContext()).load(Uri.parse(postList.get(position).getUserProfile())).error(R.drawable.main_profile).listener(requestListener).into(holder.profileImageView);
+            holder.nameTextView.setText(postList.get(position).getUserName());
+        }
         userExplain = postList.get(position).getText();
-        holder.explainTextView.setText(postList.get(position).getText());
+        holder.explainTextView.setText(userExplain);
         holder.favoriteCountTextView.setText("Likes " + postList.get(position).getFavoriteCount());
 
         if (postList.get(position).getFavorites().containsKey(currentUid)) {
@@ -263,7 +278,6 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
 
     private void favoriteEvent(final int position) {
         progress.progressON(activity);
-        changedItemPosition = position;
         final DocumentReference docRef = firestore.collection("posts").document(uidList.get(position));
         firestore.runTransaction(new Transaction.Function<Void>() {
             @Override
@@ -278,7 +292,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
                     //when btn isn't clicked before
                     userPost.setFavoriteCount(userPost.getFavoriteCount() + 1);
                     userPost.getFavorites().put(uid, true);
-                    favoriteAlarm(postList.get(position).getUid());
+                    favoriteAlarm(postList.get(position).getUid(),postList.get(position).getTimestamp());
                 }
                 transaction.set(docRef, userPost);
                 return null;
@@ -296,9 +310,9 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
         });
     }
 
-    private void favoriteAlarm(String destinationUid) {
+    private void favoriteAlarm(String destinationUid, Long timestamp) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        AlarmData alarmData = new AlarmData(user.getEmail(), user.getUid(), destinationUid, 0, "", System.currentTimeMillis());
+        AlarmData alarmData = new AlarmData(user.getEmail(), user.getUid(),currentUserName,currentUserProfile, destinationUid, 0, "", System.currentTimeMillis(),destinationUid+"_"+timestamp);
         FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
     }
 
@@ -340,10 +354,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
                     case R.id.detail_view_item_comment:
                         Intent intent = new Intent(activity, CommentActivity.class);
                         intent.putExtra("filename", postList.get(position).getUid() + "_" + postList.get(position).getTimestamp());
-                        intent.putExtra("name", userName);
-                        intent.putExtra("explain", userExplain);
-                        intent.putExtra("profile", userProfile);
-                        intent.putExtra("destinationUid", postList.get(position).getUid());
+                        intent.putExtra("ByAlarm", true);
                         activity.startActivity(intent);
                         break;
                     case R.id.detail_view_item_favorite:

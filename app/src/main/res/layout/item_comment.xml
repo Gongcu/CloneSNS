@@ -9,7 +9,6 @@
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:layout_margin="7.5dp"
-        android:src="@drawable/main_profile"
         app:civ_border_width="1dp"
         app:civ_border_color="@color/lightGray"/>
     <TextView
@@ -17,7 +16,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/comment_username"
-        android:text="username"
         android:textStyle="bold"
         android:textColor="@color/black"/>
     <TextView
@@ -25,6 +23,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/commentText"
-        android:text="message"
         android:textColor="@color/black"/>
 </LinearLayout>

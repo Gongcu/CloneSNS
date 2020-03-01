@@ -45,7 +45,10 @@ public class ProfileFragment extends BaseFragment {
     private FirebaseUser user;
     private DocumentReference docRef;
     private RecyclerView accountRecyclerView;
+
     private String uid;
+    private String currentUserNmae="";
+    private String currentUserProfile="";
 
 
     private static final int IS_NOT_FIRST_ACCESS = 20;
@@ -185,6 +188,8 @@ public class ProfileFragment extends BaseFragment {
                     userData.getFollow().put(uid, true);
                     otherUserData.setFollower_count(otherUserData.getFollower_count()+1);
                     followerNumber.setText((Integer.parseInt(followerNumber.getText().toString())+1)+"");
+                    currentUserNmae=userData.getUserName();
+                    currentUserProfile=userData.getProfile();
                     followAlarm(uid);
                     button.setText("팔로우 취소");
                     button.setTextColor(getResources().getColor(R.color.black));
@@ -210,7 +215,7 @@ public class ProfileFragment extends BaseFragment {
 
     private void followAlarm(String destinationUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),destinationUid,2,"",System.currentTimeMillis());
+        AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),currentUserNmae,currentUserProfile,destinationUid,2,"",System.currentTimeMillis(),"");
         FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
     }
 }

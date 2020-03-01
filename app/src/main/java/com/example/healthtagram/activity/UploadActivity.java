@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import com.example.healthtagram.R;
 import com.example.healthtagram.crop.CropImageActivity;
+import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.loading.BaseActivity;
@@ -33,7 +34,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -56,15 +59,19 @@ public class UploadActivity extends BaseActivity {
     private Button  confirmBtn, closeBtn;
     private TextInputEditText textInputEditText;
 
+    private String username="";
+    private String userProfile="";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload);
+        progressON();
         user = FirebaseAuth.getInstance().getCurrentUser();
         mDatabase = FirebaseDatabase.getInstance().getReference();
         firestore = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
-
+        userItemInit();
         imageView = findViewById(R.id.imageView);
         imageView.setCropShape(CropImageView.CropShape.RECTANGLE);
 
@@ -133,7 +140,7 @@ public class UploadActivity extends BaseActivity {
                     selectedImageUri = task.getResult();
                     if (selectedImageUri != null && !text.equals("")){
                         firestore.collection("posts").document(filename)
-                                .set(new UserPost(selectedImageUri.toString(), text,time,user.getUid(),user.getEmail()))
+                                .set(new UserPost(selectedImageUri.toString(), text,time,user.getUid(),user.getEmail(),username,userProfile))
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
@@ -182,5 +189,17 @@ public class UploadActivity extends BaseActivity {
         setResult(RESULT_OK);
         super.onBackPressed();
         finish();
+    }
+
+    private void userItemInit(){
+        firestore.collection("users").document(user.getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                UserData userData = documentSnapshot.toObject(UserData.class);
+                username=userData.getUserName();
+                userProfile=userData.getProfile();
+                progressOFF();
+            }
+        });
     }
 }

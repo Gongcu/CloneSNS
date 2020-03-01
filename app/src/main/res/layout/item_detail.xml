@@ -22,7 +22,6 @@
             android:textColor="@color/black"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="userId"
             android:id="@+id/detail_view_profile_name"/>
         <View
             android:layout_width="0dp"
@@ -69,7 +68,6 @@
         android:layout_height="wrap_content" />
     <TextView
         android:id="@+id/detail_view_explain"
-        android:text="explain content"
         android:layout_marginLeft="7.5dp"
         android:textColor="@color/black"
         android:layout_width="wrap_content"

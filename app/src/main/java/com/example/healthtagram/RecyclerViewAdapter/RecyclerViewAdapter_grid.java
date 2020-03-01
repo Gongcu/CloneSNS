@@ -96,7 +96,8 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
                     postList.add(item);
                 }
                 item_counter=postList.size();
-                oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
+                if(postList.size()>0)
+                    oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
                 notifyDataSetChanged();
             }
         });
