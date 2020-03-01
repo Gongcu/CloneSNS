@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".activity.UploadActivity">
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/linearItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -15,38 +15,35 @@
         android:layout_alignParentStart="true"
         android:background="@color/white"
         android:elevation="2dp"
-        android:orientation="horizontal"
-        android:paddingBottom="1dp"
-        android:padding="10dp">
+        android:padding="5dp"
+        android:paddingBottom="1dp">
 
         <Button
             android:id="@+id/close_btn"
             android:background="@drawable/close_btn"
+            android:focusable="true"
             android:clickable="true"
             android:layout_width="30dp"
-            android:layout_height="30dp" />
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"/>
         <TextView
-            android:layout_marginLeft="10dp"
-            android:layout_marginTop="2dp"
-            android:gravity="center_vertical"
-            android:textSize="20dp"
+            android:layout_marginStart="40dp"
+            android:layout_gravity="center_vertical"
+            android:textSize="20sp"
             android:text="게시글 업로드"
             android:textColor="@color/black"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
         <Button
             android:id="@+id/confirm_btn"
             android:clickable="true"
+            android:focusable="true"
             android:background="@drawable/check_btn"
             android:layout_gravity="right"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_marginRight="5dp"/>
-    </LinearLayout>
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_marginEnd="5dp"/>
+    </FrameLayout>
     <LinearLayout
         android:layout_below="@+id/linearItem"
         android:layout_width="match_parent"
@@ -69,34 +66,29 @@
                 custom:cropFixAspectRatio="true"/>
             <ImageView
                 android:id="@+id/pickPhoto"
-                android:src="@drawable/photo_library_selector"
+                android:src="@drawable/photo_library_btn"
                 android:layout_margin="15dp"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_gravity="bottom|right" />
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="bottom|end" />
             <View
                 android:layout_gravity="bottom"
                 android:layout_width="match_parent"
                 android:layout_height="0.3dp"
-                android:background="@color/colorNavIcon"></View>
+                android:background="@color/colorNavIcon"/>
         </FrameLayout>
 
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="10dp"
+        <EditText
+            android:id="@+id/textInput"
+            android:hint="@string/uploadCommentHint"
+            android:textSize="15sp"
+            android:textColor="@color/black"
+            android:background="@null"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="2">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/textInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@null"
-                android:hint="내용을 입력하세요" />
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_margin="8dp"
+            android:gravity="start"
+            android:layout_weight="2"/>
     </LinearLayout>
 
 

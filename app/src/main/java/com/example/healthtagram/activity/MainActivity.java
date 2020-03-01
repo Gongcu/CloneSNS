@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import com.example.healthtagram.R;
 import com.example.healthtagram.database.UserData;
+import com.example.healthtagram.exception.ExceptionHandler;
 import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.fragment.ProfileFragment;
@@ -58,10 +59,10 @@ public class MainActivity extends AppCompatActivity {
      * Hash Key: nhdcW85xtLEbd2HTEJW0p1Z9Z7I=
      * */
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
         setContentView(R.layout.activity_main);
         context = this;
         if (!hasPermissions(this, permissions)) {

@@ -65,10 +65,10 @@ import com.google.firebase.firestore.auth.User;
 import java.util.ArrayList;
 
 public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewAdapter_post.ItemViewHolder> {
-    public static final String TAG = "POST_ADAPTER";
+    private static final String TAG = "POST_ADAPTER";
     private int whatIsTarget = 100;
-    public static final int HOME = 0;
-    public static final int TIMELINE = 1;
+    private static final int HOME = 0;
+    private static final int TIMELINE = 1;
     private BaseApplication progress=BaseApplication.getInstance();
     private FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private ArrayList<UserPost> postList = new ArrayList<>();
@@ -83,7 +83,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     private String currentUserName="";
     private String currentUserProfile="";
 
-    public static final int FIRST = 1;
+    private static final int FIRST = 1;
     private int isFirst = 1;
     private Long oldestTimeStamp = 99999999999999L;
     private int postCounter = 0;
@@ -150,7 +150,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
                         UserPost item = document.toObject(UserPost.class);
                         oldestTimeStamp = item.getTimestamp();
                     }
-                    //2번작업. 그 timestamp보다 값이 큰 아이템들을 가져와 snapshot 리스너 사용.
+                    //2번작업. 그 timestamp보다 값이 큰 아이템들을 가져와 snapshot 리스너 사용. => 여기서 list에 값들이 추가됨
                     collectionReference.whereEqualTo("uid", uid).whereGreaterThanOrEqualTo("timestamp", oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).addSnapshotListener(postListener);
                 } else {
                     Log.d(TAG, "Error getting documents: ", task.getException());
@@ -205,7 +205,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
             progress.progressOFF();
             post_number = postList.size();
             postCounter += postList.size();
-            if (postList.size() > 1)
+            if (postList.size() > 0)
                 oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
             if (isFirst == FIRST) {
                 int position = 0;
@@ -415,7 +415,8 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
             if (!recyclerView.canScrollVertically(1) && dy > 0) {
                 if (whatIsTarget == TIMELINE)
                     collectionReference.whereEqualTo("uid", uid)
-                            .whereLessThan("timestamp", oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING)
+                            .whereLessThan("timestamp", oldestTimeStamp)
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
                             .limit(3).addSnapshotListener(postListener);
                 else if (whatIsTarget == HOME)
                     collectionReference.whereLessThan("timestamp", oldestTimeStamp)

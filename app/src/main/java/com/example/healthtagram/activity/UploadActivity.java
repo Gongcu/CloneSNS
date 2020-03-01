@@ -2,13 +2,8 @@ package com.example.healthtagram.activity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,25 +13,20 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 import com.example.healthtagram.R;
-import com.example.healthtagram.crop.CropImageActivity;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
-import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.loading.BaseActivity;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.auth.User;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -51,13 +41,12 @@ public class UploadActivity extends BaseActivity {
     private static final int REQUEST_CROP = 22;
     private Uri selectedImageUri;
     private FirebaseUser user;
-    private DatabaseReference mDatabase;// ...
     private FirebaseFirestore firestore;
     private FirebaseStorage storage;
     private CropImageView imageView;
     private ImageView getPhotoBtn;
     private Button  confirmBtn, closeBtn;
-    private TextInputEditText textInputEditText;
+    private EditText textInputEditText;
 
     private String username="";
     private String userProfile="";
@@ -68,7 +57,6 @@ public class UploadActivity extends BaseActivity {
         setContentView(R.layout.activity_upload);
         progressON();
         user = FirebaseAuth.getInstance().getCurrentUser();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
         firestore = FirebaseFirestore.getInstance();
         storage = FirebaseStorage.getInstance();
         userItemInit();

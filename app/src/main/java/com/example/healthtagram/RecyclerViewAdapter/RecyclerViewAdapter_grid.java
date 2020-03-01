@@ -48,13 +48,14 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
     private Long oldestTimeStamp;
     private int item_counter=0;
     private int times=0;
+    private TextView postNumber;
 
     /**
      *
         THIS ADAPTER IS FOR PROFILE FRAGMENT
      */
-    public RecyclerViewAdapter_grid(String uid, final TextView postNumber, Activity activity, RecyclerView recyclerView){
-        this.uid=uid;this.activity=activity; this.recyclerView = recyclerView;
+    public RecyclerViewAdapter_grid(String uid, TextView postNumber, Activity activity, RecyclerView recyclerView){
+        this.uid=uid;this.activity=activity; this.recyclerView = recyclerView; this.postNumber=postNumber;
         FirebaseFirestore firestore=FirebaseFirestore.getInstance();
         firestore.collection("posts").whereEqualTo("uid",uid).orderBy("timestamp",Query.Direction.DESCENDING).limit(12).addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
@@ -70,11 +71,14 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
                 item_counter=postList.size();
                 if(postList.size()>0)
                     oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
-                postNumber.setText((postList.size())+"");
                 notifyDataSetChanged();
             }
         });
         recyclerView.addOnScrollListener(listener_profile);
+    }
+
+    public void setPostNumber(){
+        postNumber.setText((postList.size())+"");
     }
 
     /**

@@ -23,4 +23,7 @@
     <string name="password_not_equal">비밀번호가 서로 다릅니다.</string>
     <string name="signup_null_failed">이메일 혹은 비밀번호를 확인해주세요.</string>
     <string name="loading_post">게시물 로딩중</string>
+
+    <!-- TODO:.XML FILE -->
+    <string name="uploadCommentHint">내용을 작성하세요</string>
 </resources>

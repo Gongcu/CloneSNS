@@ -2,6 +2,7 @@ package com.example.healthtagram.fragment;
 
 
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -19,6 +20,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_grid;
 import com.example.healthtagram.R;
 import com.example.healthtagram.activity.EditProfileActivity;
@@ -45,6 +51,7 @@ public class ProfileFragment extends BaseFragment {
     private FirebaseUser user;
     private DocumentReference docRef;
     private RecyclerView accountRecyclerView;
+    private RecyclerViewAdapter_grid adapter;
 
     private String uid;
     private String currentUserNmae="";
@@ -89,7 +96,7 @@ public class ProfileFragment extends BaseFragment {
             //my profile
             updateProfile(user.getUid()); //본인 uid
             button.setOnClickListener(onClickListener);
-            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(user.getUid(),postNumber,getActivity(),accountRecyclerView));
+            adapter=new RecyclerViewAdapter_grid(user.getUid(),postNumber,getActivity(),accountRecyclerView);
         }else{
             //others profile
             updateProfile(uid); //타인 uid
@@ -113,11 +120,9 @@ public class ProfileFragment extends BaseFragment {
                 }
             });
             button.setOnClickListener(onFollowClickListener);
-            accountRecyclerView.setAdapter(new RecyclerViewAdapter_grid(uid,postNumber,getActivity(),accountRecyclerView));
+            adapter=new RecyclerViewAdapter_grid(uid,postNumber,getActivity(),accountRecyclerView);
         }
         accountRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),3));
-        //progressOFF();
-
     }
 
     View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -149,18 +154,31 @@ public class ProfileFragment extends BaseFragment {
         docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
-                UserData userData = documentSnapshot.toObject(UserData.class);
+                final UserData userData = documentSnapshot.toObject(UserData.class);
                 if(userData!=null) {
-                    nickname.setText(userData.getUserName());
-                    bio.setText(userData.getBio());
-                    followerNumber.setText(userData.getFollower_count()+"");
-                    followingNumber.setText(userData.getFollowing_count()+"");
                     if (!userData.getProfile().equals(""))
-                        Glide.with(getActivity()).load(Uri.parse(userData.getProfile())).into(profilePicture);
+                        Glide.with(getActivity()).load(Uri.parse(userData.getProfile())).listener(new RequestListener<Drawable>() {
+                            @Override
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                                progressOFF();
+                                return false;
+                            }
+
+                            @Override
+                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                                nickname.setText(userData.getUserName());
+                                bio.setText(userData.getBio());
+                                followerNumber.setText((userData.getFollower_count()+""));
+                                followingNumber.setText((userData.getFollowing_count()+""));
+                                adapter.setPostNumber();
+                                accountRecyclerView.setAdapter(adapter);
+                                progressOFF();
+                                return false;
+                            }
+                        }).into(profilePicture);
                     else
                         profilePicture.setImageResource(R.drawable.main_profile);
                 }
-                progressOFF();
             }
         });
     }

@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
@@ -63,16 +64,14 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
     private int item_counter = 0;
     private int times = 1; //스크롤 횟수
     private Activity activity;
-    private BaseApplication progressDialog;
+    private BaseApplication progressDialog = BaseApplication.getInstance();
     private String uid;
-    private RecyclerView recyclerView;
+
     private Long oldestTimeStamp;
 
     public RecyclerViewAdapter_alarm(Activity activity, String uid, RecyclerView recyclerView) {
         this.uid = uid;
         this.activity = activity;
-        this.recyclerView = recyclerView;
-        progressDialog = BaseApplication.getInstance();
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         firestore.collection("alarms").whereEqualTo("destinationUid", uid).orderBy("timestamp", Query.Direction.DESCENDING).limit(10).addSnapshotListener(new EventListener<QuerySnapshot>() {
             @Override
@@ -112,6 +111,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         //이미지 로딩 라이브러리 glide
         String text = "";
         holder.ALARM_TYPE = alarmList.get(position).getKind();
+        progressDialog.progressON(activity);
         switch (holder.ALARM_TYPE) {
             case LIKE:
                 text = "님이 회원님의 게시글을 좋아합니다.";
@@ -136,6 +136,7 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
             public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
                 holder.alarm_username.setText(alarmList.get(position).getUsername());
                 holder.comment.setText(comment);
+                progressDialog.progressOFF();
                 return false;
             }
         }).into(holder.alarm_profile);
