@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDialog;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
@@ -39,7 +40,9 @@ import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.loading.BaseApplication;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -57,45 +60,28 @@ import io.opencensus.resource.Resource;
 public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerViewAdapter_alarm.ItemViewHolder> {
     public static final String TAG = "COMMENT_RECYCLERVIEW";
     private ArrayList<AlarmData> alarmList = new ArrayList<>();
+    private SwipeRefreshLayout swipeRefreshLayout;
     public static final int LIKE = 0;
     public static final int COMMENT = 1;
     public static final int FOLLOW = 2;
-
     private int item_counter = 0;
     private int times = 1; //스크롤 횟수
     private Activity activity;
     private BaseApplication progressDialog = BaseApplication.getInstance();
     private String uid;
-
+    private FirebaseFirestore firestore;
     private Long oldestTimeStamp;
 
-    public RecyclerViewAdapter_alarm(Activity activity, String uid, RecyclerView recyclerView) {
+    public RecyclerViewAdapter_alarm(Activity activity, String uid, RecyclerView recyclerView,SwipeRefreshLayout swipeRefreshLayout) {
         this.uid = uid;
         this.activity = activity;
-        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-        firestore.collection("alarms").whereEqualTo("destinationUid", uid).orderBy("timestamp", Query.Direction.DESCENDING).limit(10).addSnapshotListener(new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot value,
-                                @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    Log.w(TAG, "Listen failed.", e);
-                    return;
-                }
-                for (DocumentChange dc : value.getDocumentChanges())
-                    switch (dc.getType()) {
-                        case ADDED:
-                            AlarmData item = dc.getDocument().toObject(AlarmData.class);
-                            alarmList.add(item);
-                    }
-
-                item_counter = alarmList.size();
-                if (alarmList.size() > 0)
-                    oldestTimeStamp = alarmList.get(alarmList.size() - 1).getTimestamp();
-                notifyDataSetChanged();
-            }
-        });
+        this.swipeRefreshLayout=swipeRefreshLayout;
+        firestore = FirebaseFirestore.getInstance();
+        firestore.collection("alarms").whereEqualTo("destinationUid", uid)
+                .orderBy("timestamp", Query.Direction.DESCENDING).limit(10).get().addOnCompleteListener(onCompleteListener);
         recyclerView.addOnScrollListener(listener);
     }
+
 
 
     @NonNull
@@ -111,16 +97,16 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         //이미지 로딩 라이브러리 glide
         String text = "";
         holder.ALARM_TYPE = alarmList.get(position).getKind();
-        progressDialog.progressON(activity);
+        //progressDialog.progressON(activity);
         switch (holder.ALARM_TYPE) {
             case LIKE:
-                text = "님이 회원님의 게시글을 좋아합니다.";
+                text = activity.getResources().getString(R.string.like_alarm);
                 break;
             case COMMENT:
-                text = "님이 회원심의 게시글에 댓글을 남겼습니다.";
+                text = activity.getResources().getString(R.string.comment_alarm);
                 break;
             case FOLLOW:
-                text = "님이 회원님을 팔로우 하기 시작했습니다.";
+                text =  activity.getResources().getString(R.string.follow_alarm);
                 break;
         }
         final String comment = text;
@@ -209,7 +195,6 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
             counter++;
             if (counter >= item_counter) {
-                Log.e("glide, cout", counter + ", " + item_counter);
                 progressDialog.progressOFF();
             }
             return false;
@@ -219,7 +204,6 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
             counter++;
             if (counter >= item_counter) {
-                Log.e("glide, cout", counter + ", " + item_counter);
                 progressDialog.progressOFF();
             }
             return false;
@@ -236,31 +220,33 @@ public class RecyclerViewAdapter_alarm extends RecyclerView.Adapter<RecyclerView
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
             //마지막 게시글인지 체크
-            if (item_counter <= times * 10) {
-                progressDialog.progressOFF();
-            }
             if (!recyclerView.canScrollVertically(1)&&dy>0) {
-                progressDialog.progressON(activity);
-                FirebaseFirestore.getInstance().collection("alarms").whereEqualTo("destinationUid", uid).whereLessThan("timestamp", oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(10).addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value,
-                                        @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            Log.w(TAG, "Listen failed.", e);
-                            return;
-                        }
-                        for (QueryDocumentSnapshot doc : value) {
-                            AlarmData item = doc.toObject(AlarmData.class);
-                            alarmList.add(item);
-                        }
-                        item_counter = alarmList.size();
-                        times++;
-                        oldestTimeStamp = alarmList.get(alarmList.size() - 1).getTimestamp();
-                        notifyDataSetChanged();
-                    }
-                });
+                FirebaseFirestore.getInstance().collection("alarms").whereEqualTo("destinationUid", uid).whereLessThan("timestamp", oldestTimeStamp)
+                        .orderBy("timestamp", Query.Direction.DESCENDING).limit(10).get().addOnCompleteListener(onCompleteListener);
             }
         }
     };
 
+    OnCompleteListener<QuerySnapshot> onCompleteListener = new OnCompleteListener<QuerySnapshot>() {
+        @Override
+        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+            if(task.isSuccessful()){
+                for(QueryDocumentSnapshot item : task.getResult()){
+                    AlarmData data = item.toObject(AlarmData.class);
+                    alarmList.add(data);
+                }
+                item_counter = alarmList.size();
+                if (alarmList.size() > 0)
+                    oldestTimeStamp = alarmList.get(alarmList.size() - 1).getTimestamp();
+                notifyDataSetChanged();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        }
+    };
+
+    public void swipeUpdate(){
+        alarmList.clear();
+        firestore.collection("alarms").whereEqualTo("destinationUid", uid)
+                .orderBy("timestamp", Query.Direction.DESCENDING).limit(10).get().addOnCompleteListener(onCompleteListener);
+    }
 }

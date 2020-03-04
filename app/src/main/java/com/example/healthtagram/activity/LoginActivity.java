@@ -74,14 +74,6 @@ public class LoginActivity extends AppCompatActivity {
         loginBtn.setOnClickListener(onClickListener);
         gotoSuBtn.setOnClickListener(onClickListener);
         resetTextView.setOnClickListener(onClickListener);
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
     }
 
     View.OnClickListener onClickListener = new View.OnClickListener() {
@@ -153,6 +145,7 @@ public class LoginActivity extends AppCompatActivity {
         Intent intent = new Intent(this, c);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
+        finish();
     }
 
     private void googleLogin(){
@@ -224,9 +217,6 @@ public class LoginActivity extends AppCompatActivity {
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
                             Snackbar.make(findViewById(R.id.main_layout), getString(R.string.auth_failed), Snackbar.LENGTH_SHORT).show();
                         }
-
-                        // [START_EXCLUDE]
-                        // [END_EXCLUDE]
                     }
                 });
     }

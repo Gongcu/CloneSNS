@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 public class HistoryFragment extends BaseFragment {
     private RecyclerView recyclerView;
     private RecyclerViewAdapter_alarm adapter;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private String uid;
 
     public HistoryFragment() {
@@ -57,11 +59,19 @@ public class HistoryFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        swipeRefreshLayout=view.findViewById(R.id.swipe_refresh_layout);
         recyclerView = view.findViewById(R.id.alarm_recycler_view);
-        adapter=new RecyclerViewAdapter_alarm(getActivity(),uid,recyclerView);
+        adapter=new RecyclerViewAdapter_alarm(getActivity(),uid,recyclerView,swipeRefreshLayout);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-    }
 
+        swipeRefreshLayout.setOnRefreshListener(listener);
+    }
+    SwipeRefreshLayout.OnRefreshListener listener = new SwipeRefreshLayout.OnRefreshListener() {
+        @Override
+        public void onRefresh() {
+            adapter.swipeUpdate();
+        }
+    };
 
 }

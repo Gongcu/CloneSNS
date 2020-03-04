@@ -23,7 +23,11 @@
     <string name="password_not_equal">비밀번호가 서로 다릅니다.</string>
     <string name="signup_null_failed">이메일 혹은 비밀번호를 확인해주세요.</string>
     <string name="loading_post">게시물 로딩중</string>
-
+    <string name="upload_failed">게시물 사진 혹은 내용을 입력하세요.</string>
     <!-- TODO:.XML FILE -->
     <string name="uploadCommentHint">내용을 작성하세요</string>
+    <string name="like_alarm">님이 회원님의 게시글을 좋아합니다.</string>
+    <string name="follow_alarm">님이 회원님을 팔로우 하기 시작했습니다.</string>
+    <string name="comment_alarm">님이 회원심의 게시글에 댓글을 남겼습니다.</string>
 </resources>
+

@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -30,6 +31,7 @@ import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.Comment;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
+import com.example.healthtagram.fcm.FCMpush;
 import com.example.healthtagram.loading.BaseActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -56,6 +58,7 @@ public class CommentActivity extends BaseActivity {
     private ImageView post_owner_profile;
     private TextView post_owner_name;
     private TextView post_owner_explain;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private ImageView write_commnet_profile;
     private EditText commentEditText;
@@ -70,6 +73,7 @@ public class CommentActivity extends BaseActivity {
         setContentView(R.layout.activity_comment);
         user= FirebaseAuth.getInstance().getCurrentUser();
 
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
         post_owner_explain=findViewById(R.id.post_owner_explain);
         post_owner_name=findViewById(R.id.post_owner_name);
         post_owner_profile=findViewById(R.id.post_owner_profile);
@@ -81,13 +85,14 @@ public class CommentActivity extends BaseActivity {
         intent = getIntent();
         init();
 
-        adapter = new RecyclerViewAdapter_comment(filename);
+        adapter = new RecyclerViewAdapter_comment(filename,swipeRefreshLayout);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
         if (animator instanceof SimpleItemAnimator) {
             ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
         }
         commentUploadBtn.setOnClickListener(onClickListener);
+        swipeRefreshLayout.setOnRefreshListener(onRefreshListener);
     }
     View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
@@ -101,7 +106,12 @@ public class CommentActivity extends BaseActivity {
     };
     private void commentUpload(){
         comment = new Comment(user.getUid(),user.getEmail(),currentUserName,currentUserProfile,commentEditText.getText().toString(),System.currentTimeMillis());
-        FirebaseFirestore.getInstance().collection("posts").document(filename).collection("comments").document().set(comment);
+        FirebaseFirestore.getInstance().collection("posts").document(filename).collection("comments").document().set(comment).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                adapter.swipeUpdate();
+            }
+        });
         commentAlarm(destinationUid,commentEditText.getText().toString());
         commentEditText.setText("");
     }
@@ -169,6 +179,15 @@ public class CommentActivity extends BaseActivity {
     private void commentAlarm(String destinationUid,String message){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),currentUserName,currentUserProfile,destinationUid,1,message,System.currentTimeMillis(),filename);
-        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
+        FirebaseFirestore.getInstance().collection("alarms").document(alarmData.getUid()+"_"+alarmData.getTimestamp()).set(alarmData);
+
+        FCMpush.getInstance().sendMessage(destinationUid,getResources().getString(R.string.app_name),currentUserName+getResources().getString(R.string.comment_alarm));
     }
+
+    SwipeRefreshLayout.OnRefreshListener onRefreshListener = new SwipeRefreshLayout.OnRefreshListener() {
+        @Override
+        public void onRefresh() {
+            adapter.swipeUpdate();
+        }
+    };
 }

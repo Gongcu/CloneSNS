@@ -29,6 +29,8 @@ import com.example.healthtagram.activity.TimelineActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserPost;
 import com.facebook.login.LoginManager;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -37,18 +39,21 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import static androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_SETTLING;
 
 public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
     private ArrayList<UserPost> postList = new ArrayList<>();
+    private int whatIsTarget = 100;
+    private static final int PROFILE = 0;
+    private static final int SEARCH = 1;
     private Activity activity;
     private RecyclerView recyclerView;
     private String uid;
     private Long oldestTimeStamp;
-    private int item_counter=0;
-    private int times=0;
     private TextView postNumber;
+    private FirebaseFirestore firestore;
 
     /**
      *
@@ -56,25 +61,9 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
      */
     public RecyclerViewAdapter_grid(String uid, TextView postNumber, Activity activity, RecyclerView recyclerView){
         this.uid=uid;this.activity=activity; this.recyclerView = recyclerView; this.postNumber=postNumber;
-        FirebaseFirestore firestore=FirebaseFirestore.getInstance();
-        firestore.collection("posts").whereEqualTo("uid",uid).orderBy("timestamp",Query.Direction.DESCENDING).limit(12).addSnapshotListener(new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot value,
-                                @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    return;
-                }
-                for (QueryDocumentSnapshot doc : value) {
-                    UserPost item = doc.toObject(UserPost.class);
-                    postList.add(item);
-                }
-                item_counter=postList.size();
-                if(postList.size()>0)
-                    oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
-                notifyDataSetChanged();
-            }
-        });
-        recyclerView.addOnScrollListener(listener_profile);
+        whatIsTarget=PROFILE;   firestore=FirebaseFirestore.getInstance();
+        firestore.collection("posts").whereEqualTo("uid",uid).orderBy("timestamp",Query.Direction.DESCENDING).limit(12).addSnapshotListener(postListener);
+        recyclerView.addOnScrollListener(onScrollListener);
     }
 
     public void setPostNumber(){
@@ -86,27 +75,51 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
      THIS ADAPTER IS FOR SEARCH FRAGMENT
      */
     public RecyclerViewAdapter_grid(Activity activity, RecyclerView recyclerView){
-        this.activity=activity; this.recyclerView=recyclerView;
-        FirebaseFirestore firestore=FirebaseFirestore.getInstance();
-        firestore.collection("posts").orderBy("timestamp",Query.Direction.DESCENDING).limit(12).addSnapshotListener(new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot value,
-                                @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    return;
-                }
-                for (QueryDocumentSnapshot doc : value) {
-                    UserPost item = doc.toObject(UserPost.class);
-                    postList.add(item);
-                }
-                item_counter=postList.size();
-                if(postList.size()>0)
-                    oldestTimeStamp=postList.get(postList.size()-1).getTimestamp();
-                notifyDataSetChanged();
-            }
-        });
-        recyclerView.addOnScrollListener(listener_search);
+        this.activity=activity; this.recyclerView=recyclerView; whatIsTarget=SEARCH;
+        firestore=FirebaseFirestore.getInstance();
+        firestore.collection("posts").orderBy("timestamp",Query.Direction.DESCENDING).limit(12).addSnapshotListener(postListener);
+        recyclerView.addOnScrollListener(onScrollListener);
     }
+
+    private EventListener<QuerySnapshot> postListener = new EventListener<QuerySnapshot>() {
+        @Override
+        public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException e) {
+            if (e != null) {
+                e.printStackTrace();
+                return;
+            }
+            int index = 0;
+            for (DocumentChange dc : value.getDocumentChanges()) { //https://stackoverflow.com/questions/53439196/firestore-query-listener 바뀐 데이터 스냅샷만 가져오기
+                UserPost item = dc.getDocument().toObject(UserPost.class);
+                switch (dc.getType()) {
+                    case ADDED:
+                        Log.e("/0:HOME,1:TIME", dc.getDocument().getId() + " => add");
+                        postList.add(postList.size(), item);
+                        notifyItemChanged(postList.size());
+                        break;
+                    case MODIFIED:
+                        Log.e("/0:HOME,1:TIME", dc.getDocument().getId() + " => modi");
+                        for (UserPost post : postList) {
+                            if (post.getTimestamp().equals(item.getTimestamp()))
+                                break;
+                            index++;
+                        }
+                        Log.e("/0:HOME,1:TIME", index + " => modi");
+                        postList.set(index, item);
+                        notifyItemChanged(index);
+                        recyclerView.smoothScrollToPosition(index);
+                        break;
+                    case REMOVED:
+                        Log.e("/0:HOME,1:TIME", dc.getDocument().getId() + " => remove");
+                        postList.remove(item);
+                        notifyDataSetChanged();
+                        break;
+                }
+            }
+            if (postList.size() > 0)
+                oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
+        }
+    };
 
     @NonNull
     @Override
@@ -150,7 +163,7 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
         };
     }
 
-    RecyclerView.OnScrollListener listener_search = new RecyclerView.OnScrollListener() {
+    RecyclerView.OnScrollListener onScrollListener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
@@ -159,64 +172,16 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
         @Override
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
-            //마지막 게시글인지 체크
-            if(item_counter<=times*12){
-                //
-            }
-            if (!recyclerView.canScrollVertically(1)) {
-                FirebaseFirestore.getInstance().collection("posts").whereLessThan("timestamp",oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(12).addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value,
-                                        @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        for (QueryDocumentSnapshot doc : value) {
-                            UserPost item = doc.toObject(UserPost.class);
-                            postList.add(item);
-                        }
-                        item_counter=postList.size();
-                        times++;
-                        oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
-                        notifyDataSetChanged();
-                    }
-                });
-            }
-        }
-    };
-    RecyclerView.OnScrollListener listener_profile = new RecyclerView.OnScrollListener() {
-        @Override
-        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-            super.onScrollStateChanged(recyclerView, newState);
-        }
-
-        @Override
-        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-            super.onScrolled(recyclerView, dx, dy);
-            //마지막 게시글인지 체크
-            if(item_counter<=times*12){
-                //
-            }
-            if (!recyclerView.canScrollVertically(1)) {
-                FirebaseFirestore.getInstance().collection("posts").whereEqualTo("uid",uid).whereLessThan("timestamp",oldestTimeStamp).orderBy("timestamp", Query.Direction.DESCENDING).limit(12).addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value,
-                                        @Nullable FirebaseFirestoreException e) {
-                        if (e != null) {
-                            return;
-                        }
-                        for (QueryDocumentSnapshot doc : value) {
-                            UserPost item = doc.toObject(UserPost.class);
-                            postList.add(item);
-                        }
-                        item_counter=postList.size();
-                        times++;
-                        oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
-                        notifyDataSetChanged();
-                    }
-                });
-            }else{
-                //끝이 위에 닿았을때
+            if (!recyclerView.canScrollVertically(1) && dy > 0) {
+                if (whatIsTarget == PROFILE)
+                    FirebaseFirestore.getInstance().collection("posts").whereEqualTo("uid", uid)
+                            .whereLessThan("timestamp", oldestTimeStamp)
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                            .limit(12).addSnapshotListener(postListener);
+                else if (whatIsTarget == SEARCH)
+                    FirebaseFirestore.getInstance().collection("posts").whereLessThan("timestamp", oldestTimeStamp)
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                            .limit(12).addSnapshotListener(postListener);
             }
         }
     };

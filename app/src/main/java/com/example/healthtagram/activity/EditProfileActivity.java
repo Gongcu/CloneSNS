@@ -12,15 +12,19 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Layout;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.healthtagram.R;
 import com.example.healthtagram.crop.CropImageActivity;
+import com.example.healthtagram.database.AlarmData;
+import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.listener.EditProfileListener;
 import com.example.healthtagram.loading.BaseActivity;
@@ -31,11 +35,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -43,8 +50,11 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 public class EditProfileActivity extends BaseActivity {
+    private boolean FIRST_ACCESS = false;
+    private LinearLayout mainLayout;
     private EditText nickName, introduction;
     private ImageView profilePicture;
     private static final int OVAL = 0;
@@ -61,7 +71,9 @@ public class EditProfileActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_profile);
         progressON();
+
         storage = FirebaseStorage.getInstance();
+        mainLayout = findViewById(R.id.main_layout);
         profilePicture = findViewById(R.id.profilePicture);
         nickName = findViewById(R.id.nicknameEditText);
         introduction = findViewById(R.id.introEditText);
@@ -80,7 +92,10 @@ public class EditProfileActivity extends BaseActivity {
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.close_btn:
-                    finish();
+                    if(FIRST_ACCESS)
+                        Snackbar.make(mainLayout,"프로필 입력을 완료하세요.", Snackbar.LENGTH_LONG).show();
+                    else
+                        finish();
                     break;
                 case R.id.confirm_btn:
                     edit_profile();
@@ -92,30 +107,39 @@ public class EditProfileActivity extends BaseActivity {
         }
     };
 
+    @Override
+    public void onBackPressed() {
+        if(FIRST_ACCESS)
+            Snackbar.make(mainLayout,"프로필 입력을 완료하세요.", Snackbar.LENGTH_LONG).show();
+        else
+            super.onBackPressed();
+    }
+
     private void edit_profile() {
         progressON();
-        final String nickname = ((EditText) findViewById(R.id.nicknameEditText)).getText().toString();
+        final String username = ((EditText) findViewById(R.id.nicknameEditText)).getText().toString();
         final String bio = ((EditText) findViewById(R.id.introEditText)).getText().toString();
         final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         // Access a Cloud Firestore instance from your Activity
         final FirebaseFirestore db = FirebaseFirestore.getInstance();
-        if (nickname.equals("") || bio.equals("")) {
+        if (username.equals("") || bio.equals("")) {
             Toast.makeText(this, getString(R.string.edit_profile_fail), Toast.LENGTH_LONG).show();
             progressOFF();
             return;
         }
         /**이미지 업로드 없이 프로필 편집할 경우*/
         if (selectedImageUri == null) {
-            UserData userData = new UserData(nickname, "", bio);
+            final UserData userData = new UserData(username, "", bio);
             db.collection("users").document(user.getUid())
                     .set(userData)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            progressOFF();
+                            DataChanger(user.getUid(),username,"");
                             Toast.makeText(EditProfileActivity.this, getString(R.string.edit_profile_success), Toast.LENGTH_SHORT).show();
                             ((MainActivity) MainActivity.context).callFragmentUpdateMethod(state);
                             finish();
+                            progressOFF();
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -150,17 +174,18 @@ public class EditProfileActivity extends BaseActivity {
             public void onComplete(@NonNull Task<Uri> task) {
                 if (task.isSuccessful()) {
                     selectedImageUri = task.getResult();
-                    UserData userData = new UserData(nickname, selectedImageUri.toString(), bio);
+                    final UserData userData = new UserData(username, selectedImageUri.toString(), bio);
                     if (user != null) {
                         db.collection("users").document(user.getUid())
                                 .set(userData)
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        progressOFF();
+                                        DataChanger(user.getUid(),username,userData.getProfile());
                                         Toast.makeText(EditProfileActivity.this, getString(R.string.edit_profile_success), Toast.LENGTH_SHORT).show();
                                         ((MainActivity) MainActivity.context).callFragmentUpdateMethod(state);
                                         finish();
+                                        progressOFF();
                                     }
                                 })
                                 .addOnFailureListener(new OnFailureListener() {
@@ -176,6 +201,38 @@ public class EditProfileActivity extends BaseActivity {
                 }
             }
         });
+    }
+
+    //onSuccess : a task  onComplete : the task
+    //posts,alarms 콜렉션의 이미지, 닉네임을 교체
+    private void DataChanger(final String uid, final String name, final String profile){
+        db.collection("posts").whereEqualTo("uid",uid).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if(task.isSuccessful()){
+                    for(DocumentSnapshot item : task.getResult().getDocuments()){
+                        UserPost post = item.toObject(UserPost.class);
+                        post.setUserName(name);
+                        post.setUserProfile(profile);
+                        db.collection("posts").document(post.getUid()+"_"+post.getTimestamp()).set(post);
+                    }
+                }
+            }
+        });
+        db.collection("alarms").whereEqualTo("uid",uid).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if(task.isSuccessful()){
+                    for(DocumentSnapshot item : task.getResult().getDocuments()){
+                        AlarmData alarm = item.toObject(AlarmData.class);
+                        alarm.setUsername(name);
+                        alarm.setUserProfile(profile);
+                        db.collection("alarms").document(alarm.getUid()+"_"+alarm.getTimestamp()).set(alarm);
+                    }
+                }
+            }
+        });
+
     }
 
     @Override
@@ -215,6 +272,7 @@ public class EditProfileActivity extends BaseActivity {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 UserData userData = documentSnapshot.toObject(UserData.class);
+                Log.e("success","aa");
                 if (userData != null) {
                     nickName.setText(userData.getUserName());
                     introduction.setText(userData.getBio());
@@ -222,6 +280,9 @@ public class EditProfileActivity extends BaseActivity {
                         profilePicture.setImageResource(R.drawable.main_profile);
                     else
                         Glide.with(getApplicationContext()).load(Uri.parse(userData.getProfile()));
+                } else{
+                    //when userData is null -> cannot operate back press btn
+                    FIRST_ACCESS=true;
                 }
                 progressOFF();
             }

@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".fragment.HistoryFragment"
+    android:id="@+id/swipe_refresh_layout"
     android:orientation="vertical">
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/alarm_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"></androidx.recyclerview.widget.RecyclerView>
 
-</LinearLayout>
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

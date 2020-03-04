@@ -22,17 +22,26 @@ import android.widget.Toast;
 import com.example.healthtagram.R;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.exception.ExceptionHandler;
+import com.example.healthtagram.fcm.FCMpush;
 import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.fragment.SearchFragment;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.common.reflect.MutableTypeToInstanceMap;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -40,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     public static int UPLOAD = 100;
     private Button logoutBtn;
     private FirebaseUser user;
-    private FirebaseFirestore db;
+    private FirebaseFirestore firestore;
     private BottomNavigationView bottomNavigationView;
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private HomeFragment fragmentHome = new HomeFragment();
@@ -59,21 +68,23 @@ public class MainActivity extends AppCompatActivity {
      * Hash Key: nhdcW85xtLEbd2HTEJW0p1Z9Z7I=
      * */
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
         setContentView(R.layout.activity_main);
         context = this;
-        if (!hasPermissions(this, permissions)) {
+        //Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler(this));
+        if (!hasPermissions(this, permissions))
             ActivityCompat.requestPermissions(this, permissions, PERMISSION_CODE);
-        }
+
         user = FirebaseAuth.getInstance().getCurrentUser(); //현재 유저 가져오기
-        db= FirebaseFirestore.getInstance();
+        firestore= FirebaseFirestore.getInstance();
         if (user == null) {
             startActivity(LoginActivity.class);
+            finish();
         } else {
-            DocumentReference docRef = db.collection("users").document(user.getUid());
+            DocumentReference docRef = firestore.collection("users").document(user.getUid());
             docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                 @Override
                 public void onSuccess(DocumentSnapshot documentSnapshot) {
@@ -83,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
                         intent.putExtra("state",FIRST_ACCCESS);
                         startActivity(intent);
                     }
+                    registerPushToken();
                 }
 
             });
@@ -94,6 +106,22 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView.setSelectedItemId(R.id.action_home);
     }
 
+    private void registerPushToken(){
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+                            return;
+                        }
+                        String token = task.getResult().getToken();
+                        Map<String,Object> map = new HashMap<>();
+                        map.put("token",token);
+                        String uid = user.getUid();
+                        FirebaseFirestore.getInstance().collection("tokens").document(uid).set(map);
+                    }
+                });
+    }
 
     private void startActivity(Class c) {
         Intent intent = new Intent(this, c);
@@ -107,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
             switch (v.getId()){
                 case R.id.logoutBtn:
                     FirebaseAuth.getInstance().signOut();
-                    startActivity(SignupActivity.class);
+                    startActivity(LoginActivity.class);
                     finish();
                     break;
             }
@@ -207,11 +235,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.bottomNavigationView);
-        int seletedItemId = bottomNavigationView.getSelectedItemId();
-        if (R.id.action_home != seletedItemId) {
+        int selectedItemId = bottomNavigationView.getSelectedItemId();
+        if (R.id.action_home != selectedItemId) {
             setHomeItem(MainActivity.this); //home이 아닐 경우 home으로 이동
         } else {
             super.onBackPressed();//home일 경우 일반 종료
+            finish();
         }
     }
 

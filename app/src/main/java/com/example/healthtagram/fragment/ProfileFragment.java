@@ -30,6 +30,7 @@ import com.example.healthtagram.R;
 import com.example.healthtagram.activity.EditProfileActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
+import com.example.healthtagram.fcm.FCMpush;
 import com.example.healthtagram.loading.BaseFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -54,7 +55,7 @@ public class ProfileFragment extends BaseFragment {
     private RecyclerViewAdapter_grid adapter;
 
     private String uid;
-    private String currentUserNmae="";
+    private String currentUserName="";
     private String currentUserProfile="";
 
 
@@ -206,7 +207,7 @@ public class ProfileFragment extends BaseFragment {
                     userData.getFollow().put(uid, true);
                     otherUserData.setFollower_count(otherUserData.getFollower_count()+1);
                     followerNumber.setText((Integer.parseInt(followerNumber.getText().toString())+1)+"");
-                    currentUserNmae=userData.getUserName();
+                    currentUserName=userData.getUserName();
                     currentUserProfile=userData.getProfile();
                     followAlarm(uid);
                     button.setText("팔로우 취소");
@@ -233,7 +234,9 @@ public class ProfileFragment extends BaseFragment {
 
     private void followAlarm(String destinationUid){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),currentUserNmae,currentUserProfile,destinationUid,2,"",System.currentTimeMillis(),"");
-        FirebaseFirestore.getInstance().collection("alarms").document().set(alarmData);
+        AlarmData alarmData = new AlarmData(user.getEmail(),user.getUid(),currentUserName,currentUserProfile,destinationUid,2,"",System.currentTimeMillis(),"");
+        FirebaseFirestore.getInstance().collection("alarms").document(alarmData.getUid()+"_"+alarmData.getTimestamp()).set(alarmData);
+
+        FCMpush.getInstance().sendMessage(destinationUid,getResources().getString(R.string.app_name),currentUserName+getResources().getString(R.string.follow_alarm));
     }
 }

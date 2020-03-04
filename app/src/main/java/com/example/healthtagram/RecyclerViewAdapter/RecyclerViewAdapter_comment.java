@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
@@ -31,8 +32,10 @@ import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.fragment.ProfileFragment;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
@@ -51,32 +54,16 @@ import static com.facebook.share.internal.DeviceShareDialogFragment.TAG;
 public class RecyclerViewAdapter_comment extends RecyclerView.Adapter<RecyclerViewAdapter_comment.ItemViewHolder> {
     public static final String TAG = "COMMENT_RECYCLERVIEW";
     private ArrayList<Comment> comments = new ArrayList<>();
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private FirebaseFirestore firestore;
+    private String filename;
 
 
-    public RecyclerViewAdapter_comment(String filename) {
-        FirebaseFirestore firestore=FirebaseFirestore.getInstance();
-        firestore.collection("posts").document(filename).collection("comments").orderBy("date").addSnapshotListener(new EventListener<QuerySnapshot>() {
-            @Override
-            public void onEvent(@Nullable QuerySnapshot value,
-                                @Nullable FirebaseFirestoreException e) {
-                if (e != null) {
-                    Log.w(TAG, "Listen failed.", e);
-                    return;
-                }
-                for (DocumentChange dc : value.getDocumentChanges()){
-                    Comment item = dc.getDocument().toObject(Comment.class);
-                    switch (dc.getType()){
-                        case ADDED:
-                            comments.add(item);
-                            break;
-                        case REMOVED:
-                            comments.remove(item);
-                            break;
-                    }
-                }
-                notifyDataSetChanged();
-            }
-        });
+    public RecyclerViewAdapter_comment(String filename,SwipeRefreshLayout swipeRefreshLayout) {
+        this.filename =filename; this.swipeRefreshLayout = swipeRefreshLayout;
+        firestore=FirebaseFirestore.getInstance();
+        firestore.collection("posts").document(filename)
+                .collection("comments").orderBy("date").get().addOnCompleteListener(onCompleteListener);
     }
 
 
@@ -126,6 +113,26 @@ public class RecyclerViewAdapter_comment extends RecyclerView.Adapter<RecyclerVi
             comment_username = itemView.findViewById(R.id.comment_username);
             comment = itemView.findViewById(R.id.commentText);
         }
+    }
+
+    public void swipeUpdate(){
+        comments.clear();
+        firestore.collection("posts").document(filename)
+                .collection("comments").orderBy("date").get().addOnCompleteListener(onCompleteListener);
 
     }
+
+    OnCompleteListener<QuerySnapshot> onCompleteListener = new OnCompleteListener<QuerySnapshot>() {
+        @Override
+        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+            if(task.isSuccessful()){
+                for (QueryDocumentSnapshot item : task.getResult()) {
+                    Comment comment = item.toObject(Comment.class);
+                    comments.add(comment);
+                }
+            }
+            notifyDataSetChanged();
+            swipeRefreshLayout.setRefreshing(false);
+        }
+    };
 }

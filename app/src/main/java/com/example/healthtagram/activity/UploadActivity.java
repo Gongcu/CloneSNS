@@ -101,13 +101,18 @@ public class UploadActivity extends BaseActivity {
         progressON();
         final String text = textInputEditText.getText().toString();
         final Long time = System.currentTimeMillis();
-        final String filename = ""+user.getUid()+"_"+time;
+        final String filename = user.getUid()+"_"+time;
         StorageReference storageRef = storage.getReference();
         final StorageReference ImagesRef = storageRef.child("posts/"+filename+".jpg");
         imageView.setDrawingCacheEnabled(true);
         imageView.buildDrawingCache();
         Bitmap bitmap = imageView.getCroppedImage();
         //Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+        if(bitmap==null){
+            Toast.makeText(UploadActivity.this, getString(R.string.upload_failed), Toast.LENGTH_SHORT).show();
+            progressOFF();
+            return;
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 40, baos);
         byte[] data = baos.toByteArray();
@@ -132,7 +137,6 @@ public class UploadActivity extends BaseActivity {
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        progressOFF();
                                         Toast.makeText(UploadActivity.this, getString(R.string.upload_success), Toast.LENGTH_SHORT).show();
                                         setResult(RESULT_OK);
                                         finish();
@@ -141,18 +145,18 @@ public class UploadActivity extends BaseActivity {
                                 .addOnFailureListener(new OnFailureListener() {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
-                                        progressOFF();
                                     }
                                 });
                     }
-                } else {
-                    // Handle failures
-                    // ...
+                    else
+                        Toast.makeText(UploadActivity.this, getString(R.string.upload_failed), Toast.LENGTH_SHORT).show();
+                    progressOFF();
                 }
             }
         });
 
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -184,8 +188,10 @@ public class UploadActivity extends BaseActivity {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 UserData userData = documentSnapshot.toObject(UserData.class);
-                username=userData.getUserName();
-                userProfile=userData.getProfile();
+                if(userData!=null) {
+                    username = userData.getUserName();
+                    userProfile = userData.getProfile();
+                }
                 progressOFF();
             }
         });
