@@ -1,4 +1,4 @@
-package com.example.healthtagram.RecyclerViewAdapter;
+package com.example.healthtagram.adapter;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -29,7 +29,7 @@ import com.example.healthtagram.activity.MainActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
-import com.example.healthtagram.fcm.FCMpush;
+import com.example.healthtagram.messaging.FCMpush;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseApplication;

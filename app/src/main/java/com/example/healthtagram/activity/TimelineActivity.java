@@ -14,7 +14,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.example.healthtagram.R;
-import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_post;
+import com.example.healthtagram.adapter.RecyclerViewAdapter_post;
 import com.example.healthtagram.custom.PreloadingLinearLayoutManager;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseActivity;

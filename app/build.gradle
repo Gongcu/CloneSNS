@@ -45,6 +45,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.4.1'
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.sangcomz:FishBun:0.11.2'
     implementation ("com.github.bumptech.glide:recyclerview-integration:4.11.0") {
         // Excludes the support library because it's already included by Glide.
         transitive = false

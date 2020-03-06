@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_grid;
+import com.example.healthtagram.adapter.RecyclerViewAdapter_grid;
 import com.example.healthtagram.R;
 
 /**

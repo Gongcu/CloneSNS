@@ -24,6 +24,7 @@
         <activity android:name=".activity.TimelineActivity" />
         <activity android:name=".activity.CommentActivity" />
         <activity android:name=".activity.UploadActivity" />
+        <activity android:name=".activity.UploadActivityText" />
         <activity android:name=".activity.PasswordResetActivity" />
         <activity android:name=".activity.EditProfileActivity" />
         <activity android:name=".activity.SplashActivity">

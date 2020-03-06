@@ -9,6 +9,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -17,21 +18,20 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
+import android.widget.LinearLayout;
 
 import com.example.healthtagram.R;
 import com.example.healthtagram.database.UserData;
-import com.example.healthtagram.exception.ExceptionHandler;
-import com.example.healthtagram.fcm.FCMpush;
 import com.example.healthtagram.fragment.HistoryFragment;
 import com.example.healthtagram.fragment.HomeFragment;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.fragment.SearchFragment;
+import com.example.healthtagram.messaging.NotificationGenerator;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.common.reflect.MutableTypeToInstanceMap;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private Button logoutBtn;
     private FirebaseUser user;
     private FirebaseFirestore firestore;
+    private LinearLayout mainLayout;
     private BottomNavigationView bottomNavigationView;
     private FragmentManager fragmentManager = getSupportFragmentManager();
     private HomeFragment fragmentHome = new HomeFragment();
@@ -99,8 +100,10 @@ public class MainActivity extends AppCompatActivity {
 
             });
         }
+        mainLayout = findViewById(R.id.main_layout);
         logoutBtn = findViewById(R.id.logoutBtn);
         logoutBtn.setOnClickListener(onClickListener);
+
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setOnNavigationItemSelectedListener(new ItemSelectedListener());
         bottomNavigationView.setSelectedItemId(R.id.action_home);
@@ -191,24 +194,29 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSION_CODE: {
-                if (grantResults.length > 0) {
-                    for (int i = 0; i < permissions.length; i++) {
-                        if (permissions[i].equals(this.permissions[i])) {
-                            if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                                //허용됨
-                            }
-                        }
-                    }
-                } else {
-                    Toast.makeText(getApplicationContext(), getString(R.string.permission_failed), Toast.LENGTH_SHORT).show();
-                    ActivityCompat.requestPermissions(this, permissions, PERMISSION_CODE);
+        Log.e("grans.size",grantResults.length+"");
+        if(requestCode==PERMISSION_CODE && grantResults.length ==permissions.length ) {
+            boolean check_result = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    check_result = false;
+                    break;
                 }
-                return;
+            }
+            if(!check_result){
+                // 거부한 퍼미션이 있다면 앱을 사용할 수 없는 이유를 설명해주고 앱을 종료합니다.2 가지 경우가 있습니다.
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[0])
+                        || ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[1])||ActivityCompat.shouldShowRequestPermissionRationale(this, permissions[2])) {
+                    // 사용자가 거부만 선택한 경우에는 앱을 다시 실행하여 허용을 선택하면 앱을 사용할 수 있습니다.
+                    NotificationGenerator generator = new NotificationGenerator(this,"권한을 허용해야 앱 사용이 가능합니다.");
+
+                }else {
+                    // “다시 묻지 않음”을 사용자가 체크하고 거부를 선택한 경우에는 설정(앱 정보)에서 퍼미션을 허용해야 앱을 사용할 수 있습니다.
+                    NotificationGenerator generator = new NotificationGenerator(this,"설정에서 앱 권한을 허용해야 앱 사용이 가능합니다.");
+                }
+                finish();
             }
         }
-
     }
 
     public boolean hasPermissions(Context context, String... permissions) {

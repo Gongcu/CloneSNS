@@ -1,4 +1,4 @@
-package com.example.healthtagram.fcm;
+package com.example.healthtagram.messaging;
 
 import android.util.Log;
 
@@ -10,7 +10,6 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.gson.Gson;
 import java.io.IOException;
-import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;

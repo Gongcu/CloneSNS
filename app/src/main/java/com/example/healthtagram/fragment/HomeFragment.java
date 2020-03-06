@@ -13,7 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.healthtagram.R;
-import com.example.healthtagram.RecyclerViewAdapter.RecyclerViewAdapter_post;
+import com.example.healthtagram.adapter.RecyclerViewAdapter_post;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseFragment;
 
