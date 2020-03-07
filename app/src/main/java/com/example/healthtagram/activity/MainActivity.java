@@ -9,7 +9,6 @@ import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -31,7 +30,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -157,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     transaction.replace(R.id.frameLayout, fragmentSearch).commitAllowingStateLoss();
                     break;
                 case R.id.action_exercise:
-                    Intent intent = new Intent(getApplicationContext(), UploadActivityText.class);
+                    Intent intent = new Intent(getApplicationContext(), UploadActivity.class);
                     startActivityForResult(intent, UPLOAD);
                     break;
                 case R.id.action_heart:

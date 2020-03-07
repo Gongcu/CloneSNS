@@ -24,15 +24,17 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.example.healthtagram.R;
+import com.example.healthtagram.ViewPager;
 import com.example.healthtagram.activity.CommentActivity;
 import com.example.healthtagram.activity.MainActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
-import com.example.healthtagram.messaging.FCMpush;
+import com.example.healthtagram.database.UserPostTest;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseApplication;
+import com.example.healthtagram.messaging.FCMpush;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -58,7 +60,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     private static final int TIMELINE = 1;
     private BaseApplication progress=BaseApplication.getInstance();
     private FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-    private ArrayList<UserPost> postList = new ArrayList<>();
+    private ArrayList<UserPostTest> postList = new ArrayList<>();
     private ArrayList<String> uidList = new ArrayList<>();
 
     private String uid;
@@ -167,7 +169,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
             if(task.isSuccessful()){
                 progress.progressON(activity);
                 for(QueryDocumentSnapshot item : task.getResult()) {
-                    UserPost post = item.toObject(UserPost.class);
+                    UserPostTest post = item.toObject(UserPostTest.class);
                     postList.add(post);
                     uidList.add(item.getId());
                 }
@@ -179,7 +181,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
                     oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
                 if (isFirst == FIRST) {
                     int position = 0;
-                    for (UserPost post : postList) {
+                    for (UserPostTest post : postList) {
                         if (post.getTimestamp().equals(selected_item_timestamp))
                             break;
                         position++;
@@ -208,9 +210,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     @Override
     public void onBindViewHolder(@NonNull final ItemViewHolder holder, final int position) {
         //이미지 로딩 라이브러리 glide
-        try {
-            Glide.with(holder.itemView.getContext()).load(Uri.parse(postList.get(position).getPhoto())).into(holder.postImageView);
-        }catch (Exception e){e.printStackTrace(); }
+        holder.setAdapter(postList.get(position).getPhoto());
         if(postList.get(position).getUserName()==null)
         firestore.collection("users").document(postList.get(position).getUid()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
@@ -309,7 +309,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
 
     public class ItemViewHolder extends RecyclerView.ViewHolder {
         private ImageView profileImageView;
-        private ImageView postImageView;
+        private ViewPager viewPager;
         private TextView nameTextView;
         private TextView favoriteCountTextView;
         private TextView explainTextView;
@@ -318,7 +318,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
 
         public ItemViewHolder(View itemView) {
             super(itemView);
-            postImageView = itemView.findViewById(R.id.detail_view_item_image);
+            viewPager = itemView.findViewById(R.id.detail_view_item_view_pager);
             profileImageView = itemView.findViewById(R.id.detail_view_profile_image);
             nameTextView = itemView.findViewById(R.id.detail_view_profile_name);
             favoriteCountTextView = itemView.findViewById(R.id.detail_view_favorite_count);
@@ -331,18 +331,9 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
             commentBtn.setOnClickListener(onClickListener);
             explainTextView.setOnClickListener(onClickListener);
         }
-        public void changeFavorite(final String text, final boolean favoriteOn){
-            activity.runOnUiThread(new Runnable() {
-                public void run() {
-                    if(favoriteOn) {
-                        favoriteCountTextView.setText(text);
-                        profileImageView.setImageResource(R.drawable.heart_btn_clicked);
-                    }else{
-                        favoriteCountTextView.setText(text);
-                        profileImageView.setImageResource(R.drawable.heart_btn);
-                    }
-                }
-            });
+        private void setAdapter(ArrayList<String> images){
+            viewPager.setAdapter(new ViewPageAdapter_post(activity,images));
+            viewPager.setOffscreenPageLimit(4);
         }
         View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override

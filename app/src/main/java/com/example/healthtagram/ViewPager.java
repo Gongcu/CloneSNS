@@ -4,9 +4,6 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.viewpager2.widget.ViewPager2;
-
-
 public class ViewPager extends androidx.viewpager.widget.ViewPager {
 
 

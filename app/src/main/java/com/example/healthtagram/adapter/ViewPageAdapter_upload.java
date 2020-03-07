@@ -17,17 +17,17 @@ import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.util.ArrayList;
 
-public class ViewPageAdapter extends PagerAdapter {
+public class ViewPageAdapter_upload extends PagerAdapter {
     private Context mContext = null ;
     private ArrayList<Uri> images = new ArrayList<>();
     private ArrayList<CropImageView> imageViews = new ArrayList<>();
     private UploadPostListener listener;
-    public ViewPageAdapter() {
+    public ViewPageAdapter_upload() {
 
     }
 
     // Context를 전달받아 mContext에 저장하는 생성자 추가.
-    public ViewPageAdapter(Context context) {
+    public ViewPageAdapter_upload(Context context) {
         mContext = context ;
     }
 

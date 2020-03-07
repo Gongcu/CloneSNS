@@ -56,17 +56,27 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1">
-            <com.theartofdev.edmodo.cropper.CropImageView
-                android:id="@+id/imageView"
+            <androidx.viewpager.widget.ViewPager
+                android:id="@+id/view_pager"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                custom:cropShape="oval"
-                custom:cropAspectRatioX="1"
-                custom:cropAspectRatioY="1"
-                custom:cropFixAspectRatio="true"/>
+                android:layout_height="match_parent"/>
+            <ImageView
+                android:id="@+id/prevPhoto"
+                android:src="@drawable/ic_arrow_back_blue_24dp"
+                android:layout_margin="15dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="bottom|start" />
             <ImageView
                 android:id="@+id/pickPhoto"
                 android:src="@drawable/photo_library_btn"
+                android:layout_margin="20dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="bottom|center" />
+            <ImageView
+                android:id="@+id/nextPhoto"
+                android:src="@drawable/ic_arrow_forward_blue_24dp"
                 android:layout_margin="15dp"
                 android:layout_width="40dp"
                 android:layout_height="40dp"

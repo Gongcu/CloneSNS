@@ -37,9 +37,7 @@ public class ViewPageAdapter_post extends PagerAdapter {
             view = inflater.inflate(R.layout.item_page_detail, container, false);
             ImageView imageView = view.findViewById(R.id.detail_view_item_image);
             Glide.with(mContext).load(Uri.parse(images.get(position))).into(imageView);
-            //Glide.with(holder.itemView.getContext()).load(Uri.parse(postList.get(position).getPhoto())).into(holder.postImageView);
         }
-        // 뷰페이저에 추가.
         container.addView(view) ;
         return view ;
     }
