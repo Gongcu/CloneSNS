@@ -15,6 +15,7 @@ import android.widget.Button;
 
 import com.example.healthtagram.R;
 import com.example.healthtagram.adapter.RecyclerViewAdapter_post;
+import com.example.healthtagram.adapter.RecyclerViewAdapter_test;
 import com.example.healthtagram.custom.PreloadingLinearLayoutManager;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseActivity;
@@ -25,7 +26,7 @@ public class TimelineActivity extends BaseActivity {
     private RecyclerView recyclerView;
     private SwipeRefreshLayout refreshLayout;
     private Button backBtn;
-    private RecyclerViewAdapter_post adapter;
+    private RecyclerViewAdapter_test adapter;
     private String uid;
     private Long timestamp;
     private RecyclerView.SmoothScroller smoothScroller;
@@ -42,7 +43,7 @@ public class TimelineActivity extends BaseActivity {
         uid = intent.getExtras().getString("uid");
         timestamp = intent.getExtras().getLong("timestamp");
 
-        adapter = new RecyclerViewAdapter_post(this, recyclerView, uid, timestamp,refreshLayout);
+        adapter = new RecyclerViewAdapter_test(this, recyclerView, uid, timestamp,refreshLayout);
         adapter.setHasStableIds(true);
         /**  RecyclerView prevent to blink  */
         RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();

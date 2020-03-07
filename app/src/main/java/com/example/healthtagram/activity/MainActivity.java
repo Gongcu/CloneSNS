@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                     transaction.replace(R.id.frameLayout, fragmentSearch).commitAllowingStateLoss();
                     break;
                 case R.id.action_exercise:
-                    Intent intent = new Intent(getApplicationContext(), UploadActivity.class);
+                    Intent intent = new Intent(getApplicationContext(), UploadActivityText.class);
                     startActivityForResult(intent, UPLOAD);
                     break;
                 case R.id.action_heart:

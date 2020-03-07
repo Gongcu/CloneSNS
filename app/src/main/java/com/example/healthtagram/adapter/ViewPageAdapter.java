@@ -20,6 +20,7 @@ import java.util.ArrayList;
 public class ViewPageAdapter extends PagerAdapter {
     private Context mContext = null ;
     private ArrayList<Uri> images = new ArrayList<>();
+    private ArrayList<CropImageView> imageViews = new ArrayList<>();
     private UploadPostListener listener;
     public ViewPageAdapter() {
 
@@ -35,14 +36,12 @@ public class ViewPageAdapter extends PagerAdapter {
         View view = null ;
 
         if (mContext != null) {
-            // LayoutInflater를 통해 "/res/layout/page.xml"을 뷰로 생성.
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.item_page, container, false);
-            ImageView imageView = view.findViewById(R.id.imageView);
+            CropImageView imageView = view.findViewById(R.id.imageView);
             if(images.size()>0) {
-                imageView.setImageURI(images.get(position));
-                imageView.setDrawingCacheEnabled(true);
-                imageView.buildDrawingCache();
+                imageView.setImageUriAsync(images.get(position));
+                imageViews.add(imageView);
             }
         }
         // 뷰페이저에 추가.
@@ -58,7 +57,6 @@ public class ViewPageAdapter extends PagerAdapter {
 
     @Override
     public int getCount() {
-        Log.e("image's",images.size()+"");
         return images.size();
     }
 
@@ -75,6 +73,15 @@ public class ViewPageAdapter extends PagerAdapter {
 
     public void setListener(UploadPostListener uploadPostListener){
         this.listener=uploadPostListener;
+    }
+    public ArrayList<Bitmap> getBitmapImages(){
+        ArrayList<Bitmap> bitmaps = new ArrayList<>();
+        for(int i=0; i<getCount(); i++) {
+            imageViews.get(i).setDrawingCacheEnabled(true);
+            imageViews.get(i).buildDrawingCache();
+            bitmaps.add(imageViews.get(i).getCroppedImage());
+        }
+        return bitmaps;
     }
 
 }

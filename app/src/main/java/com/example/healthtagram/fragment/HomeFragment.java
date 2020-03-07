@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 
 import com.example.healthtagram.R;
 import com.example.healthtagram.adapter.RecyclerViewAdapter_post;
+import com.example.healthtagram.adapter.RecyclerViewAdapter_test;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseFragment;
 
@@ -21,7 +22,7 @@ public class HomeFragment extends BaseFragment {
     private static final int HOME = 0;
     private SwipeRefreshLayout refreshLayout;
     private RecyclerView recyclerView;
-    private RecyclerViewAdapter_post adapter;
+    private RecyclerViewAdapter_test adapter;
 
 
     public HomeFragment() {
@@ -45,7 +46,7 @@ public class HomeFragment extends BaseFragment {
     public void init(View view){
         refreshLayout = view.findViewById(R.id.home_fragment_layout);
         recyclerView = view.findViewById(R.id.post_recyclerView);
-        adapter = new RecyclerViewAdapter_post(getActivity(),getActivity().getSupportFragmentManager(),recyclerView,refreshLayout);
+        adapter = new RecyclerViewAdapter_test(getActivity(),getActivity().getSupportFragmentManager(),recyclerView,refreshLayout);
         adapter.setHasStableIds(true);
         RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
         if (animator instanceof SimpleItemAnimator) {

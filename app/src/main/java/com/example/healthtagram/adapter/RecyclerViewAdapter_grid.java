@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.healthtagram.activity.TimelineActivity;
-import com.example.healthtagram.database.UserPost;
+import com.example.healthtagram.database.UserPostTest;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -27,7 +27,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
 
 public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.ViewHolder>{
-    private ArrayList<UserPost> postList = new ArrayList<>();
+    private ArrayList<UserPostTest> postList = new ArrayList<>();
     private int whatIsTarget = 100;
     private static final int PROFILE = 0;
     private static final int SEARCH = 1;
@@ -73,7 +73,7 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
             }
             int index = 0;
             for (DocumentChange dc : value.getDocumentChanges()) { //https://stackoverflow.com/questions/53439196/firestore-query-listener 바뀐 데이터 스냅샷만 가져오기
-                UserPost item = dc.getDocument().toObject(UserPost.class);
+                UserPostTest item = dc.getDocument().toObject(UserPostTest.class);
                 switch (dc.getType()) {
                     case ADDED:
                         Log.e("/0:HOME,1:TIME", dc.getDocument().getId() + " => add");
@@ -82,7 +82,7 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
                         break;
                     case MODIFIED:
                         Log.e("/0:HOME,1:TIME", dc.getDocument().getId() + " => modi");
-                        for (UserPost post : postList) {
+                        for (UserPostTest post : postList) {
                             if (post.getTimestamp().equals(item.getTimestamp()))
                                 break;
                             index++;
@@ -118,7 +118,7 @@ public class RecyclerViewAdapter_grid extends RecyclerView.Adapter<RecyclerView.
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         ImageView imageView = ((RecyclerViewAdapter_grid.CustomViewHolder)holder).imageView;
-        Glide.with(holder.itemView.getContext()).load(postList.get(position).getPhoto()).apply(RequestOptions.centerCropTransform()).into(imageView);
+        Glide.with(holder.itemView.getContext()).load(postList.get(position).getPhoto().get(0)).apply(RequestOptions.centerCropTransform()).into(imageView);
     }
 
     @Override

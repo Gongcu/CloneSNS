@@ -54,7 +54,7 @@ public class UploadActivityText extends BaseActivity {
     private FirebaseStorage storage;
     //private CropImageView imageView;
     private ViewPager viewpager;
-    private ImageView getPhotoBtn;
+    private ImageView getPhotoBtn, nextPhotoBtn,prevPhotoBtn;
     private Button  confirmBtn, closeBtn;
     private EditText textInputEditText;
     private ArrayList<Uri> path = new ArrayList<>();
@@ -62,7 +62,9 @@ public class UploadActivityText extends BaseActivity {
     private String username="";
     private String userProfile="";
     private ViewPageAdapter pageAdapter;
+    private int currentPosition =0;
     private int i;
+    private int count=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,14 +80,18 @@ public class UploadActivityText extends BaseActivity {
         imageView = findViewById(R.id.imageView);
         imageView.setCropShape(CropImageView.CropShape.RECTANGLE);*/
         viewpager = findViewById(R.id.view_pager);
+        nextPhotoBtn = findViewById(R.id.nextPhoto);
+        prevPhotoBtn = findViewById(R.id.prevPhoto);
         getPhotoBtn = findViewById(R.id.pickPhoto);
         confirmBtn = findViewById(R.id.confirm_btn);
         closeBtn = findViewById(R.id.close_btn);
         textInputEditText = findViewById(R.id.textInput);
 
         pageAdapter = new ViewPageAdapter(this);
-
+        viewpager.setOffscreenPageLimit(4);
         viewpager.setAdapter(pageAdapter);
+        prevPhotoBtn.setOnClickListener(onClickListener);
+        nextPhotoBtn.setOnClickListener(onClickListener);
         closeBtn.setOnClickListener(onClickListener);
         confirmBtn.setOnClickListener(onClickListener);
         getPhotoBtn.setOnClickListener(onClickListener);
@@ -103,6 +109,17 @@ public class UploadActivityText extends BaseActivity {
                     break;
                 case R.id.confirm_btn:
                     uploadPost();
+                    break;
+                case R.id.nextPhoto:
+                    currentPosition=(currentPosition+1)%3;
+                    viewpager.setCurrentItem(currentPosition,true);
+                    break;
+                case R.id.prevPhoto:
+                    if(currentPosition==0)
+                        currentPosition=2;
+                    else
+                        currentPosition=(currentPosition-1)%3;
+                    viewpager.setCurrentItem(currentPosition,true);
                     break;
             }
         }
@@ -135,71 +152,58 @@ public class UploadActivityText extends BaseActivity {
         for(int i =0; i<path.size(); i++){
             ImagesRefs.add(storageRef.child("posts/"+filename+String.valueOf(i)+".jpg"));
         }
-
-        /*
-        imageView.setDrawingCacheEnabled(true);
-        imageView.buildDrawingCache();
-        Bitmap bitmap = imageView.getCroppedImage();
-
-        //Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
-        */
-        if(bitmaps.size()==0){
+        bitmaps = pageAdapter.getBitmapImages();
+        Log.e("bitmaps size",bitmaps.size()+"");
+        if(bitmaps.size()==0 || text.equals("")){
             Toast.makeText(UploadActivityText.this, getString(R.string.upload_failed), Toast.LENGTH_SHORT).show();
             progressOFF();
             return;
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ArrayList<ByteArrayOutputStream> baos = new ArrayList<>();
         ArrayList<byte[]> data = new ArrayList<>();
-        ArrayList<UploadTask> uploadTasks = new ArrayList<>();
+        UploadTask uploadTask;
         for(int i=0; i<bitmaps.size(); i++) {
-            bitmaps.get(i).compress(Bitmap.CompressFormat.JPEG, 40, baos);
-            data.add(baos.toByteArray());
-            uploadTasks.add(ImagesRefs.get(i).putBytes(data.get(i)));
-        }
-        for(i=0; i<uploadTasks.size(); i++) {
-            Task<Uri> urlTask = uploadTasks.get(i).continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            baos.add(new ByteArrayOutputStream());
+            bitmaps.get(i).compress(Bitmap.CompressFormat.JPEG, 20,baos.get(i));
+            data.add(baos.get(i).toByteArray());
+            uploadTask=ImagesRefs.get(i).putBytes(data.get(i));
+            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
                 @Override
                 public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
                     if (!task.isSuccessful()) {
                         throw task.getException();
                     }
-                    return ImagesRefs.get(i).getDownloadUrl();
+                    return ImagesRefs.get(count++).getDownloadUrl();
                 }
             }).addOnCompleteListener(new OnCompleteListener<Uri>() {
                 @Override
                 public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()) {
+                    if(task.isSuccessful())
                         selectedImageUris.add(task.getResult().toString());
-                        if (selectedImageUris.size() ==bitmaps.size() && !text.equals("")) {
-                            Log.e("start","gogo");
-                            firestore.collection("posts").document(filename)
-                                    .set(new UserPostTest(selectedImageUris, text, time, user.getUid(), user.getEmail(), username, userProfile))
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-                                            Toast.makeText(UploadActivityText.this, getString(R.string.upload_success), Toast.LENGTH_SHORT).show();
-                                            setResult(RESULT_OK);
-                                            progressOFF();
-                                            finish();
-                                        }
-                                    })
-                                    .addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            e.printStackTrace();
-                                            progressOFF();
-                                        }
-                                    });
-                        } else {
-                            Log.e("start","해당안됨");
-                            Toast.makeText(UploadActivityText.this, getString(R.string.upload_failed), Toast.LENGTH_SHORT).show();
-                            progressOFF();
-                        }
+                    if (selectedImageUris.size() == bitmaps.size()) {
+                        firestore.collection("posts").document(filename)
+                                .set(new UserPostTest(selectedImageUris, text, time, user.getUid(), user.getEmail(), username, userProfile))
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Toast.makeText(UploadActivityText.this, getString(R.string.upload_success), Toast.LENGTH_SHORT).show();
+                                        setResult(RESULT_OK);
+                                        progressOFF();
+                                        finish();
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        e.printStackTrace();
+                                        Toast.makeText(UploadActivityText.this, getString(R.string.upload_failed), Toast.LENGTH_SHORT).show();
+                                        progressOFF();
+                                    }
+                                });
                     }
                 }
             });
         }
-
     }
 
 

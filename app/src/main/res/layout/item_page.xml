@@ -4,10 +4,12 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-    <ImageView
+    <com.theartofdev.edmodo.cropper.CropImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:adjustViewBounds="true"/>
+        custom:cropShape="oval"
+        custom:cropAspectRatioX="1"
+        custom:cropAspectRatioY="1"
+        custom:cropFixAspectRatio="true" />
 </LinearLayout>

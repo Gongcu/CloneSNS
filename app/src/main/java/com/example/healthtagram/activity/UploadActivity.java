@@ -2,10 +2,14 @@ package com.example.healthtagram.activity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -30,10 +34,15 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.sangcomz.fishbun.FishBun;
+import com.sangcomz.fishbun.adapter.image.impl.GlideAdapter;
+import com.sangcomz.fishbun.define.Define;
 import com.theartofdev.edmodo.cropper.CropImageView;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class UploadActivity extends BaseActivity {
@@ -92,9 +101,26 @@ public class UploadActivity extends BaseActivity {
 
     // 여러 이미지 겟 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
     private void getPicture() {
+            FishBun.with(this)
+                    .setImageAdapter(new GlideAdapter())
+                    .setActionBarColor(Color.parseColor("#ffffff"), Color.parseColor("#ffffff"), true)
+                    .setActionBarTitleColor(Color.parseColor("#000000"))
+                    .setIsUseDetailView(false)
+                    .setMaxCount(1)
+                    .setMinCount(1)
+                    .exceptGif(true)
+                    .setCamera(true)
+                    .setHomeAsUpIndicatorDrawable(ContextCompat.getDrawable(this, R.drawable.ic_arrow_back_black_24dp))
+                    .setDoneButtonDrawable(ContextCompat.getDrawable(this, R.drawable.ic_check_black_24dp))
+                    .setActionBarTitle("이미지 선택")
+                    .textOnImagesSelectionLimitReached("이미지는 1개가 최대입니다.")
+                    .textOnNothingSelected("이미지를 선택해주세요.")
+                    .startAlbum();
+
+/*
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
-        startActivityForResult(intent, FROM_ALBUM);
+        startActivityForResult(intent, FROM_ALBUM);*/
     }
 
     private void uploadPost(){
@@ -161,11 +187,11 @@ public class UploadActivity extends BaseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FROM_ALBUM && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            if(data.getData()!=null) {
-                imageView.setImageUriAsync(data.getData());
-                selectedImageUri=data.getData();
-            }
+        if (requestCode == Define.ALBUM_REQUEST_CODE && resultCode == RESULT_OK ) {
+            ArrayList<Uri> item = data.getParcelableArrayListExtra(Define.INTENT_PATH);
+            imageView.setImageUriAsync(item.get(0));
+            selectedImageUri=item.get(0);
+
         }
         else if(requestCode == REQUEST_CROP && resultCode == RESULT_OK){
             //imageView.setImageURI(data.getData());
