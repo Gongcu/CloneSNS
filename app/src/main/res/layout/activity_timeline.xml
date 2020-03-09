@@ -8,7 +8,7 @@
     tools:context=".activity.TimelineActivity">
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:background="@color/white"
         android:elevation="2dp"
         android:paddingBottom="1dp">
@@ -24,10 +24,10 @@
         <Button
             android:id="@+id/backBtn"
             android:layout_gravity="center_vertical|left"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
-            android:layout_marginRight="5dp"
-            android:background="@drawable/back_btn"/>
+            android:layout_width="27dp"
+            android:layout_height="27dp"
+            android:layout_marginStart="5dp"
+            android:background="@drawable/ic_arrow_back"/>
     </FrameLayout>
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"

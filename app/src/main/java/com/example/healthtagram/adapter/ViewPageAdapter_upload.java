@@ -3,12 +3,10 @@ package com.example.healthtagram.adapter;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 import com.example.healthtagram.R;
@@ -37,7 +35,7 @@ public class ViewPageAdapter_upload extends PagerAdapter {
 
         if (mContext != null) {
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            view = inflater.inflate(R.layout.item_page, container, false);
+            view = inflater.inflate(R.layout.item_upload_page, container, false);
             CropImageView imageView = view.findViewById(R.id.imageView);
             if(images.size()>0) {
                 imageView.setImageUriAsync(images.get(position));

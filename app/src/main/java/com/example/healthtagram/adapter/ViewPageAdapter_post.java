@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.viewpager.widget.PagerAdapter;
 
@@ -34,7 +36,7 @@ public class ViewPageAdapter_post extends PagerAdapter {
         if (mContext != null) {
             Log.e("item",images.get(position));
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            view = inflater.inflate(R.layout.item_page_detail, container, false);
+            view = inflater.inflate(R.layout.item_detail_page, container, false);
             ImageView imageView = view.findViewById(R.id.detail_view_item_image);
             Glide.with(mContext).load(Uri.parse(images.get(position))).into(imageView);
         }
@@ -57,5 +59,6 @@ public class ViewPageAdapter_post extends PagerAdapter {
     public boolean isViewFromObject(@NonNull View view, @NonNull Object object) {
         return (view == (View)object);
     }
+
 
 }

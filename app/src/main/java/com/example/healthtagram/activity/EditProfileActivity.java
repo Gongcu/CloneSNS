@@ -1,18 +1,13 @@
 package com.example.healthtagram.activity;
 
-import androidx.annotation.AnyRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.Layout;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -25,10 +20,7 @@ import com.example.healthtagram.R;
 import com.example.healthtagram.crop.CropImageActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserPost;
-import com.example.healthtagram.fragment.ProfileFragment;
-import com.example.healthtagram.listener.EditProfileListener;
 import com.example.healthtagram.loading.BaseActivity;
-import com.example.healthtagram.loading.BaseApplication;
 import com.example.healthtagram.database.UserData;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -41,16 +33,12 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 
 public class EditProfileActivity extends BaseActivity {
     private boolean FIRST_ACCESS = false;

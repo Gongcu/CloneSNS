@@ -1,10 +1,11 @@
 package com.example.healthtagram.database;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class UserPost {
-    private String photo;
+    private ArrayList<String> photo;
     private String text;
     private Long timestamp;
     private String uid;  //getUid()
@@ -18,7 +19,7 @@ public class UserPost {
     public UserPost(){}
 
 
-    public UserPost(String photo, String text, Long timestamp, String uid, String userId,String userName,String userProfile) {
+    public UserPost(ArrayList<String> photo, String text, Long timestamp, String uid, String userId, String userName, String userProfile) {
         this.photo = photo;
         this.text = text;
         this.timestamp = timestamp;
@@ -94,11 +95,15 @@ public class UserPost {
         this.text = text;
     }
 
-    public String getPhoto() {
+    public ArrayList<String> getPhoto() {
         return photo;
     }
 
-    public void setPhoto(String photo) {
+    public void setPhoto(ArrayList<String> photo) {
         this.photo = photo;
+    }
+
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
     }
 }

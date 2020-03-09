@@ -21,7 +21,7 @@ import androidx.viewpager.widget.ViewPager;
 import com.example.healthtagram.R;
 import com.example.healthtagram.adapter.ViewPageAdapter_upload;
 import com.example.healthtagram.database.UserData;
-import com.example.healthtagram.database.UserPostTest;
+import com.example.healthtagram.database.UserPost;
 import com.example.healthtagram.loading.BaseActivity;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -181,7 +181,7 @@ public class UploadActivity extends BaseActivity {
                         selectedImageUris.add(task.getResult().toString());
                     if (selectedImageUris.size() == bitmaps.size()) {
                         firestore.collection("posts").document(filename)
-                                .set(new UserPostTest(selectedImageUris, text, time, user.getUid(), user.getEmail(), username, userProfile))
+                                .set(new UserPost(selectedImageUris, text, time, user.getUid(), user.getEmail(), username, userProfile))
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {

@@ -23,6 +23,7 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
+import com.example.healthtagram.CircleIndicator;
 import com.example.healthtagram.R;
 import com.example.healthtagram.ViewPager;
 import com.example.healthtagram.activity.CommentActivity;
@@ -30,7 +31,6 @@ import com.example.healthtagram.activity.MainActivity;
 import com.example.healthtagram.database.AlarmData;
 import com.example.healthtagram.database.UserData;
 import com.example.healthtagram.database.UserPost;
-import com.example.healthtagram.database.UserPostTest;
 import com.example.healthtagram.fragment.ProfileFragment;
 import com.example.healthtagram.listener.PostScrollToPositionListener;
 import com.example.healthtagram.loading.BaseApplication;
@@ -60,7 +60,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
     private static final int TIMELINE = 1;
     private BaseApplication progress=BaseApplication.getInstance();
     private FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-    private ArrayList<UserPostTest> postList = new ArrayList<>();
+    private ArrayList<UserPost> postList = new ArrayList<>();
     private ArrayList<String> uidList = new ArrayList<>();
 
     private String uid;
@@ -169,7 +169,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
             if(task.isSuccessful()){
                 progress.progressON(activity);
                 for(QueryDocumentSnapshot item : task.getResult()) {
-                    UserPostTest post = item.toObject(UserPostTest.class);
+                    UserPost post = item.toObject(UserPost.class);
                     postList.add(post);
                     uidList.add(item.getId());
                 }
@@ -181,7 +181,7 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
                     oldestTimeStamp = postList.get(postList.size() - 1).getTimestamp();
                 if (isFirst == FIRST) {
                     int position = 0;
-                    for (UserPostTest post : postList) {
+                    for (UserPost post : postList) {
                         if (post.getTimestamp().equals(selected_item_timestamp))
                             break;
                         position++;
@@ -308,13 +308,15 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
 
 
     public class ItemViewHolder extends RecyclerView.ViewHolder {
-        private ImageView profileImageView;
         private ViewPager viewPager;
         private TextView nameTextView;
         private TextView favoriteCountTextView;
         private TextView explainTextView;
+        private TextView itemCountTextView;
         private ImageView favoriteImageView;
         private ImageView commentBtn;
+        private ImageView profileImageView;
+        private CircleIndicator circleIndicator;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
@@ -325,15 +327,38 @@ public class RecyclerViewAdapter_post extends RecyclerView.Adapter<RecyclerViewA
             explainTextView = itemView.findViewById(R.id.detail_view_explain);
             favoriteImageView = itemView.findViewById(R.id.detail_view_item_favorite);
             commentBtn = itemView.findViewById(R.id.detail_view_item_comment);
+            itemCountTextView = itemView.findViewById(R.id.item_count_text_view);
+            circleIndicator = itemView.findViewById(R.id.circle_indicator);
 
             profileImageView.setOnClickListener(onClickListener);
             favoriteImageView.setOnClickListener(onClickListener);
             commentBtn.setOnClickListener(onClickListener);
             explainTextView.setOnClickListener(onClickListener);
+
         }
         private void setAdapter(ArrayList<String> images){
+            final int totalPageNumber=images.size();
             viewPager.setAdapter(new ViewPageAdapter_post(activity,images));
-            viewPager.setOffscreenPageLimit(4);
+            viewPager.setOffscreenPageLimit(totalPageNumber);
+            if(totalPageNumber>1) {
+                itemCountTextView.setText(1 + "/" + totalPageNumber);
+                circleIndicator.createDotPanel(totalPageNumber,R.drawable.indicator_dot_off,R.drawable.indicator_dot_on,0);
+                viewPager.addOnPageChangeListener(new androidx.viewpager.widget.ViewPager.OnPageChangeListener() {
+                    @Override
+                    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) { }
+
+                    @Override
+                    public void onPageSelected(int position) {
+                        itemCountTextView.setText((position+1)+"/"+totalPageNumber);
+                        circleIndicator.selectDot(position);
+                    }
+
+                    @Override
+                    public void onPageScrollStateChanged(int state) {}
+                });
+            }
+            else
+                itemCountTextView.setVisibility(View.GONE);
         }
         View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
