@@ -8,7 +8,7 @@
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        custom:cropShape="oval"
+        custom:cropShape="rectangle"
         custom:cropAspectRatioX="1"
         custom:cropAspectRatioY="1"
         custom:cropFixAspectRatio="true" />
