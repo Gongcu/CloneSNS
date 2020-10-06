@@ -1,16 +1,14 @@
 # CloneSNS (Yours)
 >THIS APPLICATION IS JUST AN EXAMPLE
 
-## STACK
+## STACK 📚 & Library 📘 
 > 1. Android(java)
 > 2. Firebase(Auth,firestore, firestorage, FCM)
-
-## Library
-> 1. Glide
-> 2. CropImageView
-> 3. okhttp3
-> 4. JSON, GSON
-> 5. Fishbun(images picker)
+> 3. Glide
+> 4. CropImageView
+> 5. okhttp3
+> 6. JSON, GSON
+> 7. Fishbun(images picker)
 
 
 ## Function
@@ -54,6 +52,6 @@
 > comment, follow, like
 
 
-## Contact
+## Contact ☎
 > Email. knmy0101@naver.com
 
